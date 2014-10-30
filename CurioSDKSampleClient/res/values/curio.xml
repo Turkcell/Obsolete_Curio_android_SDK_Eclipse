@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="server_url">http://curio.turkcell.com.tr/api/v2</string>
+    <string name="api_key">XXXXX</string>
+    <string name="tracking_code">XXXXX</string>
+    <integer name="session_timeout">4</integer>
+    <bool name="periodic_dispatch_enabled">true</bool>
+    <integer name="dispatch_period">2</integer>
+    <integer name="max_cached_activity_count">50</integer>
+    <bool name="logging_enabled">true</bool>
+</resources>
