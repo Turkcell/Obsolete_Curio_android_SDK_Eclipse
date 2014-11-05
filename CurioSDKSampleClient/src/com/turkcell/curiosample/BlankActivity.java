@@ -29,7 +29,7 @@ public class BlankActivity extends Activity {
 	@Override
 	protected void onStart() {
 		super.onStart();
-		CurioClient.getInstance().startScreen(this, "Blank Activity", "blank");
+		CurioClient.getInstance(this).startScreen(this, "Blank Activity", "blank");
 		Log.i(TAG, "onStart called. isFinishing: " + isFinishing());
 	}
 	
@@ -48,7 +48,7 @@ public class BlankActivity extends Activity {
 	@Override
 	protected void onStop() {
 		super.onStop();
-		CurioClient.getInstance().endScreen(this);
+		CurioClient.getInstance(this).endScreen(this);
 		Log.i(TAG, "onStop called. isFinishing: " + isFinishing());
 	}
 	

@@ -30,8 +30,7 @@ public class MainActivity extends FragmentActivity implements ActionBar.OnNaviga
 		super.onCreate(savedInstanceState);
 		Log.i(TAG, "onCreate called. isFinishing: " + isFinishing());
 		
-		CurioClient.createInstance(this);
-		CurioClient.getInstance().startSession();
+		CurioClient.getInstance(this).startSession();
 		
 		setContentView(R.layout.activity_main);
 		
@@ -100,7 +99,7 @@ public class MainActivity extends FragmentActivity implements ActionBar.OnNaviga
 		public void onStart() {
 			super.onStart();
 			Log.i(TAG, "onStart of fragment");
-			CurioClient.getInstance().startScreen(this.getClass().toString() + sectionId, "Section ğüşıçö " + sectionId + " screen", "Sec" + sectionId);
+			CurioClient.getInstance(getActivity()).startScreen(this.getClass().toString() + sectionId, "Section ğüşıçö " + sectionId + " screen", "Sec" + sectionId);
 		}
 
 		@Override
@@ -131,7 +130,7 @@ public class MainActivity extends FragmentActivity implements ActionBar.OnNaviga
 		public void onStop() {
 			super.onStop();
 			Log.i(TAG, "onStop of fragment");
-			CurioClient.getInstance().endScreen(this.getClass().toString() + sectionId);
+			CurioClient.getInstance(getActivity()).endScreen(this.getClass().toString() + sectionId);
 		}
 		
 		@Override
@@ -143,7 +142,7 @@ public class MainActivity extends FragmentActivity implements ActionBar.OnNaviga
 	
 	
 	public void startNewActivity(View v){
-		CurioClient.getInstance().sendEvent("buttonClick", "start button");
+		CurioClient.getInstance(this).sendEvent("buttonClick", "start button");
 		Intent intent = new Intent(this, BlankActivity.class);
 		startActivity(intent);
 	}
@@ -170,7 +169,7 @@ public class MainActivity extends FragmentActivity implements ActionBar.OnNaviga
 	protected void onStop() {
 		super.onStop();
 		if(isFinishing()){
-			CurioClient.getInstance().endSession();
+			CurioClient.getInstance(this).endSession();
 		}
 		Log.i(TAG, "onStop called. isFinishing: " + isFinishing());
 	}

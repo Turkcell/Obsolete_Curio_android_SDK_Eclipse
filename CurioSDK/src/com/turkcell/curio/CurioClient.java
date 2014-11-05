@@ -82,7 +82,7 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 	}
 
 	/**
-	 * Creates an client instance. Should be called first.
+	 * Creates a client instance. Should be called first.
 	 * 
 	 * @param context
 	 * @return
@@ -93,6 +93,20 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 			
 			instance.startDBRequestProcessorThread();
 			instance.startMainRequestProcessorThread();
+		}
+
+		return instance;
+	}
+	
+	/**
+	 * Gets and creates instance if needed.
+	 * 
+	 * @param context
+	 * @return
+	 */
+	public static synchronized CurioClient getInstance(Context context) {
+		if(instance == null){
+			createInstance(context);
 		}
 
 		return instance;
