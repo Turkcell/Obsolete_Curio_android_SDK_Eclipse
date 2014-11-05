@@ -6,7 +6,7 @@
  */
 package com.turkcell.curio.utils;
 
-import com.turkcell.curio.client.BuildConfig;
+import com.turkcell.curio.BuildConfig;
 
 /**
  * Logger class for controlling logging availability.
