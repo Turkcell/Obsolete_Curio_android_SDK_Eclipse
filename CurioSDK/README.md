@@ -1,4 +1,4 @@
-#Curio Android SDK 1.0
+#Curio Android SDK 1.02
 
 [Curio](https://gui-curio.turkcell.com.tr) is Turkcell's mobile analytics system, and this is Curio's Android Client SDK library. Applications developed for ***Android 2.2 Froyo (API Level 8) and higher*** can easily use Curio mobile analytics with this library.
 
@@ -38,6 +38,15 @@ All configuraiton of Curio is made through XML configuration file. For this, cre
 
 **logging_enabled:** [Optional] All of the Curio logs will be disabled if this is false. Default is true.
 
+##Dependencies:
+Curio SDK uses [Google Ad Id](https://developer.android.com/google/play-services/id.html), so its dependent to **Google Play Services**. You should add Play Services library project to your application project.
+
+You can learn more detail on how to integrate your application project with Play Services [here on Google's documentation](https://developer.android.com/google/play-services/setup.html).
+
+Also you should edit project.properties file to point correct path to Play Services library project:
+
+	android.library.reference.1=path/to/playservices/project/google-play-services_lib
+
 ##Usage:
 
 ###Instance Creation and Starting Session:
@@ -45,8 +54,7 @@ Instance creation and session start should be in onCreate() method of applicatio
 
 	protected void onCreate(Bundle savedInstanceState) {
 		...
-		CurioClient.createInstance(this);
-		CurioClient.getInstance().startSession();
+		CurioClient.getInstance(context).startSession();
 		...
 	}
 
@@ -55,7 +63,7 @@ Instance creation and session start should be in onCreate() method of applicatio
 Should be called once per activity class or fragment.
 
 	protected void onStart() {
-		CurioClient.getInstance().startScreen(SampleActivity.this, "Sample Activity", "sample");
+		CurioClient.getInstance(context).startScreen(SampleActivity.this, "Sample Activity", "sample");
 		...
 	}
 
@@ -63,13 +71,13 @@ Should be called once per activity class or fragment.
 Should be called once per activity class or fragment.
 
 	protected void onStop() {
-		CurioClient.getInstance().endScreen(SampleActivity.this);
+		CurioClient.getInstance(context).endScreen(SampleActivity.this);
 		...
 	}
 
 ###Sending Event:
 	...
-	CurioClient.getInstance().sendEvent("sample event key", "sample event value");
+	CurioClient.getInstance(context).sendEvent("sample event key", "sample event value");
 	...
 
 ###Ending Session:
@@ -78,7 +86,7 @@ Session ending should be in onStop() method of application's main (or exit) acti
 	protected void onStop() {
 		...
 		if(isFinishing()){
-			CurioClient.getInstance().endSession();
+			CurioClient.getInstance(context).endSession();
 		}
 		...
 	}
@@ -87,21 +95,13 @@ Actually that's all you need to do in your application for a quick and simple in
 
 #API and Usage Details
 ##Initialization
-First thing to use Curio is creating the singleton instance by calling:
- 
-	protected void onCreate(Bundle savedInstanceState) {
-		...
-		CurioClient.createInstance(this);
-		...
-	}
 
-once at the begining of application. Calls to other methods such as getInstance() etc. before creating the instance will throw an illegalStateException.
 ###Starting Session
 By starting session, you tell Curio server that application is launched, so before doing anything else you should start a session at the very beginning of the application by calling:
 
 	protected void onCreate(Bundle savedInstanceState) {
 		...
-		CurioClient.getInstance().startSession();
+		CurioClient.getInstance(context).startSession();
 		...
 	}
 
@@ -123,7 +123,7 @@ By starting session, you tell Curio server that application is launched, so befo
 By starting session, you tell Curio server that a new Activity (application screen) is displayed by user. So you should start a new screen in `onStart()` method of each activity that you'd like to track by calling:
 	
 	protected void onStart() {
-		CurioClient.getInstance().startScreen(SampleActivity.this, "Sample Activity", "sample");
+		CurioClient.getInstance(context).startScreen(SampleActivity.this, "Sample Activity", "sample");
 		...
 	}
    
@@ -138,7 +138,7 @@ By starting session, you tell Curio server that a new Activity (application scre
 ***context or className:*** This parameter is used as a key for the screen and thus it should be unique for every screen (means an activity, service or fragment). If using in a class that's not unique for each screen (such as fragments), String className parameter can be used instead of Activity instance. But do not forget each className parameter should be unique for each screen.
 
 	protected void onStart() {
-		CurioClient.getInstance().startScreen("sample_Fragment_1", "Sample Activity", "sample");
+		CurioClient.getInstance(context).startScreen("sample_Fragment_1", "Sample Activity", "sample");
 		...
 	}
 
@@ -149,7 +149,7 @@ By starting session, you tell Curio server that a new Activity (application scre
 By ending session, you tell Curio server that the current Activity is finished by user. **So you should call `endScreen()` method in `onStop()` method of each activity that you start tracking by calling `startScreen()`.** You can end a screen by calling:
 	
 	protected void onStart() {
-		CurioClient.getInstance().endScreen(SampleActivity.this);
+		CurioClient.getInstance(context).endScreen(SampleActivity.this);
 		...
 	}
 
@@ -166,7 +166,7 @@ By ending session, you tell Curio server that the current Activity is finished b
 ***context or className:*** This parameter is used as a key for the screen and thus it should be unique for every screen (means an activity, service or fragment). If using in a class that's not unique for each screen (such as fragments), String className parameter can be used instead of Activity instance. But do not forget each className parameter should be unique for each screen.
 
 	protected void onStart() {
-		CurioClient.getInstance().startScreen("sample_Fragment_1");
+		CurioClient.getInstance(context).startScreen("sample_Fragment_1");
 		...
 	}
 
@@ -174,7 +174,7 @@ By ending session, you tell Curio server that the current Activity is finished b
 You can track certain user actions like button clicks, user choices, etc. by sending custom events to Curio. You can send events by calling:
 
 	...
-	CurioClient.getInstance().sendEvent("sample event key", "sample event value");
+	CurioClient.getInstance(context).sendEvent("sample event key", "sample event value");
 	...
  
 **Methods:**
@@ -194,7 +194,7 @@ Session ending should be in onStop() method of application's main (or exit) acti
 	protected void onStop() {
 		...
 		if(isFinishing()){
-			CurioClient.getInstance().endSession();
+			CurioClient.getInstance(context).endSession();
 		}
 		...
 	}

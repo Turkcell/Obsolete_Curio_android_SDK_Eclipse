@@ -354,7 +354,7 @@ public class CurioRequestProcessor implements Runnable {
 		paramList.add(new BasicNameValuePair(Constants.HTTP_PARAM_MODEL, clientInstance.getStaticFeatureSet().getModel()));
 		paramList.add(new BasicNameValuePair(Constants.HTTP_PARAM_OS_TYPE, clientInstance.getStaticFeatureSet().getOs()));
 		paramList.add(new BasicNameValuePair(Constants.HTTP_PARAM_OS_VERSION, clientInstance.getStaticFeatureSet().getOsVersion()));
-		paramList.add(new BasicNameValuePair(Constants.HTTP_PARAM_SDK_VERSION, clientInstance.getStaticFeatureSet().getSdkVersion()));
+		paramList.add(new BasicNameValuePair(Constants.HTTP_PARAM_CURIO_SDK_VERSION, clientInstance.getStaticFeatureSet().getSdkVersion()));
 		paramList.add(new BasicNameValuePair(Constants.HTTP_PARAM_APP_VERSION, clientInstance.getStaticFeatureSet().getAppVersionName()));
 		paramList.add(new BasicNameValuePair(Constants.HTTP_PARAM_JSON_DATA, jsonData));
 
@@ -529,7 +529,7 @@ public class CurioRequestProcessor implements Runnable {
 			params.put(Constants.HTTP_PARAM_MODEL, clientInstance.getStaticFeatureSet().getModel());
 			params.put(Constants.HTTP_PARAM_OS_TYPE, clientInstance.getStaticFeatureSet().getOs());
 			params.put(Constants.HTTP_PARAM_OS_VERSION, clientInstance.getStaticFeatureSet().getOsVersion());
-			params.put(Constants.HTTP_PARAM_SDK_VERSION, clientInstance.getStaticFeatureSet().getSdkVersion());
+			params.put(Constants.HTTP_PARAM_CURIO_SDK_VERSION, clientInstance.getStaticFeatureSet().getSdkVersion());
 			params.put(Constants.HTTP_PARAM_APP_VERSION, clientInstance.getStaticFeatureSet().getAppVersionName());
 		} else {
 			params.put(Constants.HTTP_PARAM_SESSION_CODE, clientInstance.getSessionCode(false));

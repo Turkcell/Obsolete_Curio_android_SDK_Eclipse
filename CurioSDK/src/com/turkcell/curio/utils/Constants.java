@@ -32,7 +32,7 @@ public class Constants {
 	public static final String HTTP_PARAM_ACTIVITY_HEIGHT = "activityHeight";
 	public static final String HTTP_PARAM_OS_TYPE = "osType";
 	public static final String HTTP_PARAM_OS_VERSION = "osVer";
-	public static final String HTTP_PARAM_SDK_VERSION = "sdkVer";
+	public static final String HTTP_PARAM_CURIO_SDK_VERSION = "curioSdkVer";
 	public static final String HTTP_PARAM_APP_VERSION = "appVer";
 	public static final String HTTP_PARAM_BRAND = "brand";
 	public static final String HTTP_PARAM_MODEL = "model";
@@ -45,7 +45,6 @@ public class Constants {
 	public static final String HTTP_PARAM_INTERNET_CONN_TYPE = "connType";
 	public static final String HTTP_PARAM_LANG = "lang";
 	public static final String HTTP_PARAM_API_KEY = "apiKey";
-	public static final String HTTP_PARAM_CURIO_SDK_VERSION = "curioSdkVer";
 	public static final String HTTP_PARAM_SESSION_TIMEOUT = "sessionTimeout";
 	public static final String HTTP_PARAM_TIME = "time";
 	public static final String HTTP_PARAM_JSON_DATA = "data";
@@ -104,4 +103,7 @@ public class Constants {
 	public static final int HONEYCOMB_3_2_SDK_INT = 13;
 	public static final int JELLYBEAN_4_2_SDK_INT = 17;
 	public static final int GINGERBREAD_2_3_3_SDK_INT = 10;
+	
+	//Important, update this value on every version update!!!
+	public static final String CURIO_SDK_VER = "1.02";
 }

@@ -846,8 +846,8 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 			this.brand = android.os.Build.BRAND;
 			this.model = android.os.Build.MODEL;
 			this.os = Constants.OS_NAME_STR;
-			this.osVersion = android.os.Build.VERSION.RELEASE;
-			this.sdkVersion = Integer.toString(android.os.Build.VERSION.SDK_INT);
+			this.osVersion = Integer.toString(android.os.Build.VERSION.SDK_INT);
+			this.sdkVersion = Constants.CURIO_SDK_VER;
 			this.appVersionName = appVersionName;
 		}
 

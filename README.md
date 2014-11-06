@@ -1,4 +1,4 @@
-#Curio Android SDK 1.0
+#Curio Android SDK 1.02
 
 [Curio](https://gui-curio.turkcell.com.tr) is Turkcell's mobile analytics system, and this is Curio's Android Client SDK library. Applications developed for ***Android 2.2 Froyo (API Level 8) and higher*** can easily use Curio mobile analytics with this library.
 
@@ -42,6 +42,10 @@ All configuraiton of Curio is made through XML configuration file. For this, cre
 Curio SDK uses [Google Ad Id](https://developer.android.com/google/play-services/id.html), so its dependent to **Google Play Services**. You should add Play Services library project to your application project.
 
 You can learn more detail on how to integrate your application project with Play Services [here on Google's documentation](https://developer.android.com/google/play-services/setup.html).
+
+Also you should edit project.properties file in the SDK to point correct path to Play Services library project:
+
+	android.library.reference.1=path/to/playservices/project/google-play-services_lib
 
 ##Usage:
 
