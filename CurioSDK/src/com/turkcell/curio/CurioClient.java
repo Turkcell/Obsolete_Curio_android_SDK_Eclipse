@@ -12,11 +12,10 @@ import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-
 import org.apache.http.HttpStatus;
 import org.json.JSONException;
 import org.json.JSONObject;
-
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.graphics.Point;
@@ -25,7 +24,6 @@ import android.os.Handler;
 import android.telephony.TelephonyManager;
 import android.view.Display;
 import android.view.WindowManager;
-
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.ads.identifier.AdvertisingIdClient.Info;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
@@ -47,6 +45,7 @@ import com.turkcell.curio.utils.VisitorCodeManager;
  * @author Can Ciloglu
  * 
  */
+@SuppressLint("FieldGetter")
 public class CurioClient implements INetworkConnectivityChangeListener {
 	private static final String TAG = "CurioClient";
 	private Context context;
@@ -759,6 +758,7 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 	 * @author Can Ciloglu
 	 *
 	 */
+	@SuppressLint("NewApi")
 	public class StaticFeatureSet {
 		private String apiKey;
 		private String trackingCode;

@@ -10,11 +10,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
+import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -22,7 +21,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Build;
-
 import com.turkcell.curio.CurioClient;
 import com.turkcell.curio.model.OfflineRequest;
 import com.turkcell.curio.utils.CurioDBContract.BaseOfflineEntryColumns;
@@ -126,6 +124,7 @@ public class CurioDBHelper extends SQLiteOpenHelper {
 		onCreate(db);
 	}
 
+	@SuppressLint("NewApi")
 	@Override
 	public void onConfigure(SQLiteDatabase db) {
 		/**
