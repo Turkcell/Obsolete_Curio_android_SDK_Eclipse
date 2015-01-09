@@ -6,6 +6,9 @@ build/
 # built application files
 *.apk
 *.ap_
+
+#MacOs
+.DS_Store
  
 # files for the dex VM
 *.dex
