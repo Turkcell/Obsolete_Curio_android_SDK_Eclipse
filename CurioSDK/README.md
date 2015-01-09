@@ -119,7 +119,7 @@ For sending custom id to Curio server, setCustomParameter(String) method should 
 		CurioClient.getInstance(this).getPushData(getIntent());
 		
 		//Custom id. Optional.
-		CurioClient.getInstance(this).setCustomParameter("sampleCustomId");
+		CurioClient.getInstance(this).setCustomId("sampleCustomId");
 		
 		//Start session
 		CurioClient.getInstance(this).startSession();
