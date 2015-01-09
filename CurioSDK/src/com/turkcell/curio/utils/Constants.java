@@ -48,15 +48,20 @@ public class Constants {
 	public static final String HTTP_PARAM_SESSION_TIMEOUT = "sessionTimeout";
 	public static final String HTTP_PARAM_TIME = "time";
 	public static final String HTTP_PARAM_JSON_DATA = "data";
+	public static final String HTTP_PARAM_PUSH_TOKEN = "pushToken";
+	public static final String HTTP_PARAM_PUSH_ID = "pushId";
+	public static final String HTTP_PARAM_CUSTOM_ID = "customId";
 	
 	public static final String CONFIG_PARAM_SESSION_TIMEOUT = "session_timeout";
 	public static final String CONFIG_PARAM_API_KEY = "api_key";
+	public static final String CONFIG_PARAM_GCM_SENDER_ID = "gcm_senderId";
 	public static final String CONFIG_PARAM_PERIODIC_DISPATCH = "periodic_dispatch_enabled";
 	public static final String CONFIG_PARAM_TRACKING_CODE = "tracking_code";
 	public static final String CONFIG_PARAM_SERVER_URL = "server_url";
 	public static final String CONFIG_PARAM_DISPATCH_PERIOD = "dispatch_period";
 	public static final String CONFIG_PARAM_MAX_CACHED_ACTIVITY_COUNT = "max_cached_activity_count";
 	public static final String CONFIG_PARAM_LOGGING_ENABLED = "logging_enabled";
+	public static final String CONFIG_PARAM_AUTO_PUSH_REGISTRATION = "auto_push_registration";
 
 	public static final int CONFIG_PARAM_DEFAULT_VALUE_SESSION_TIMEOUT_IN_MINUTES = 30;
 	public static final int CONFIG_PARAM_DEFAULT_VALUE_DISPATCH_PERIOD_IN_MINUTES = 5;
@@ -84,6 +89,7 @@ public class Constants {
 	public static final String SERVER_URL_SUFFIX_SEND_EVENT = "/event/create";
 	public static final String SERVER_URL_SUFFIX_PERIODIC_BATCH = "/batch/create";
 	public static final String SERVER_URL_SUFFIX_OFFLINE_CACHE = "/offline/create";
+	public static final String SERVER_URL_SUFFIX_PUSH_DATA = "/visitor/setPushData";
 
 	public static final String UTF8_ENCODING = "utf-8";
 	public static final int NOT_IN_PROCESS = 0;
@@ -105,5 +111,11 @@ public class Constants {
 	public static final int GINGERBREAD_2_3_3_SDK_INT = 10;
 	
 	//Important, update this value on every version update!!!
-	public static final String CURIO_SDK_VER = "1.02";
+	public static final String CURIO_SDK_VER = "1.03";
+	
+	public static final String SHARED_PREF_NAME_GCM = "gcm";
+	public static final String SHARED_PREF_KEY_GCM_REGID = "gcm_registration_id";
+	public static final String SHARED_PREF_KEY_APP_VERSION = "app_version";
+	
+	public static final String PAYLOAD_KEY_PUSH_TOKEN = "pId";
 }

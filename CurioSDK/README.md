@@ -1,4 +1,4 @@
-#Curio Android SDK 1.02
+#Curio Android SDK 1.03
 
 [Curio](https://gui-curio.turkcell.com.tr) is Turkcell's mobile analytics system, and this is Curio's Android Client SDK library. Applications developed for ***Android 2.2 Froyo (API Level 8) and higher*** can easily use Curio mobile analytics with this library.
 
@@ -15,6 +15,8 @@ All configuraiton of Curio is made through XML configuration file. For this, cre
 	    <string name="tracking_code">your tracking code</string>
 	    <integer name="session_timeout">15</integer>
 	    <bool name="periodic_dispatch_enabled">false</bool>
+	    <string name="gcm_senderId">your GCM sender id</string>
+    	<bool name="auto_push_registration">false</bool>
 	    <integer name="dispatch_period">5</integer>
 	    <integer name="max_cached_activity_count">1000</integer>
 	    <bool name="logging_enabled">false</bool>
@@ -22,13 +24,13 @@ All configuraiton of Curio is made through XML configuration file. For this, cre
 
 ####Configuration Parameters:
 
-**server_url:** [Required] Curio server URL, can be obtained from Turkcell. 
+**server\_url:** [Required] Curio server URL, can be obtained from Turkcell. 
 
-**api_key:** [Required] Application specific API key, can be obtained from Turkcell.
+**api\_key:** [Required] Application specific API key, can be obtained from Turkcell.
 
-**tracking_code:** [Required] Application specific tracking code, can be obtained from Turkcell.
+**tracking\_code:** [Required] Application specific tracking code, can be obtained from Turkcell.
 
-**session_timeout:** [Optional] Session timeout in minutes. Default is 30 minutes but it's highly recommended to change this value acording to the nature of your application. Specifiying a correct session timeout value for your application will increase the accuracy of the analytics data.
+**session\_timeout:** [Optional] Session timeout in minutes. Default is 30 minutes but it's highly recommended to change this value acording to the nature of your application. Specifiying a correct session timeout value for your application will increase the accuracy of the analytics data.
 
 **periodic\_dispatch\_enabled:** [Optional] Periodic dispatch is enabled if true. Default is false.
 
@@ -36,7 +38,11 @@ All configuraiton of Curio is made through XML configuration file. For this, cre
 
 **max\_cached\_activity\_count:** [Optional] Max. number of user activity that Curio library will remember when device is not connected to the Internet. Default is 1000. Max. value can be 4000.
 
-**logging_enabled:** [Optional] All of the Curio logs will be disabled if this is false. Default is true.
+**logging\_enabled:** [Optional] All of the Curio logs will be disabled if this is false. Default is true.
+
+**auto\_push\_registration** [Optional] If true, Curio registers your application for push notifications. But to receive push notifications, application should contain required configuration parameters in AndroidManifest.xml and implement required receiver/service classes. For more information please read [Google's documentation about GCM](https://developer.android.com/google/gcm/client.html)
+
+**gcm\_senderId** [Required] GCM Sender Id parameter, can be obtained from Turkcell. Required if auto push registration is enabled otherwise no need to specify.
 
 ##Dependencies:
 Curio SDK uses [Google Ad Id](https://developer.android.com/google/play-services/id.html), so its dependent to **Google Play Services**. You should add Play Services library project to your application project.
@@ -88,6 +94,35 @@ Session ending should be in onStop() method of application's main (or exit) acti
 		if(isFinishing()){
 			CurioClient.getInstance(context).endSession();
 		}
+		...
+	}
+
+###Sending Push Notification Data (if push is enabled):
+For sending received push notification data to Curio push server, getPushData(Intent) method should be called. This method should be called before startSession() method as below:
+
+	protected void onCreate(Bundle savedInstanceState) {
+		...
+		//If your application receives push notification. Optional
+		CurioClient.getInstance(this).getPushData(getIntent());
+		
+		//Start session
+		CurioClient.getInstance(this).startSession();
+		...
+	}
+	
+###Sending Custom Id (if push is enabled):
+For sending custom id to Curio server, setCustomParameter(String) method should be called. This method should be called before startSession() method as below:
+
+	protected void onCreate(Bundle savedInstanceState) {
+		...
+		//If your application receives push notification. Optional
+		CurioClient.getInstance(this).getPushData(getIntent());
+		
+		//Custom id. Optional.
+		CurioClient.getInstance(this).setCustomParameter("sampleCustomId");
+		
+		//Start session
+		CurioClient.getInstance(this).startSession();
 		...
 	}
 

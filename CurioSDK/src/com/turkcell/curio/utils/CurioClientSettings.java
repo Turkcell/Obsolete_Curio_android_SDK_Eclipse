@@ -21,11 +21,13 @@ public class CurioClientSettings {
 	private String apiKey;
 	private int sessionTimeout;
 	private boolean isPeriodicDispatchEnabled;
+	private String gcmSenderId;
 	private int dispatchPeriod;
 	private String trackingCode;
 	private String serverUrl;
 	private int maxCachedActivityCount;
 	private static boolean loggingEnabled = true;
+	private boolean autoPushRegistration;
 
 	/**
 	 * Private constructor.
@@ -37,8 +39,10 @@ public class CurioClientSettings {
 		
 		loggingEnabled = paramLoader.getBoolean(Constants.CONFIG_PARAM_LOGGING_ENABLED, true);
 		apiKey = paramLoader.getString(Constants.CONFIG_PARAM_API_KEY, null);
+		gcmSenderId = paramLoader.getString(Constants.CONFIG_PARAM_GCM_SENDER_ID, null);
 		trackingCode = paramLoader.getString(Constants.CONFIG_PARAM_TRACKING_CODE, null);
 		serverUrl = paramLoader.getString(Constants.CONFIG_PARAM_SERVER_URL, null);
+		autoPushRegistration = paramLoader.getBoolean(Constants.CONFIG_PARAM_AUTO_PUSH_REGISTRATION, false);
 
 		if(apiKey == null || trackingCode == null || serverUrl == null){
 			throw new IllegalStateException("api_key, tracking_code and server_url are required parameters, they can NOT be null. Please be sure that you defined those parameters in curio.xml config file.");
@@ -120,6 +124,14 @@ public class CurioClientSettings {
 	public String getServerUrl() {
 		return serverUrl;
 	}
+	
+	public String getGcmSenderId() {
+		return gcmSenderId;
+	}
+
+	public void setGcmSenderId(String gcmSenderId) {
+		this.gcmSenderId = gcmSenderId;
+	}
 
 	public void setServerUrl(String serverUrl) {
 		this.serverUrl = serverUrl;
@@ -136,4 +148,13 @@ public class CurioClientSettings {
 	public static boolean isLoggingEnabled() {
 		return loggingEnabled;
 	}
+
+	public boolean isAutoPushRegistration() {
+		return autoPushRegistration;
+	}
+
+	public void setAutoPushRegistration(boolean autoPushRegistration) {
+		this.autoPushRegistration = autoPushRegistration;
+	}
+	
 }

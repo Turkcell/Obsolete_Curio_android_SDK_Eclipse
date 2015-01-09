@@ -12,11 +12,14 @@ import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+
 import org.apache.http.HttpStatus;
 import org.json.JSONException;
 import org.json.JSONObject;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.graphics.Point;
 import android.os.Build;
@@ -24,6 +27,7 @@ import android.os.Handler;
 import android.telephony.TelephonyManager;
 import android.view.Display;
 import android.view.WindowManager;
+
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.ads.identifier.AdvertisingIdClient.Info;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
@@ -37,6 +41,7 @@ import com.turkcell.curio.utils.CurioDBHelper;
 import com.turkcell.curio.utils.CurioLogger;
 import com.turkcell.curio.utils.CurioUtil;
 import com.turkcell.curio.utils.NetworkUtil;
+import com.turkcell.curio.utils.PushUtil;
 import com.turkcell.curio.utils.VisitorCodeManager;
 
 /**
@@ -67,6 +72,8 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 	private Boolean isAdIdAvailable = null;
 	protected boolean isParamLoadingFinished = false;
 	protected boolean isSessionStartSent;
+	private String pushMessageId = null;
+	private String customId = null;
 
 	/**
 	 * Be sure to call createInstance first.
@@ -87,16 +94,16 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 	 * @return
 	 */
 	public static synchronized CurioClient createInstance(Context context) {
-		if(instance == null){
+		if (instance == null) {
 			instance = new CurioClient(context);
-			
+
 			instance.startDBRequestProcessorThread();
 			instance.startMainRequestProcessorThread();
 		}
 
 		return instance;
 	}
-	
+
 	/**
 	 * Gets and creates instance if needed.
 	 * 
@@ -104,7 +111,7 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 	 * @return
 	 */
 	public static synchronized CurioClient getInstance(Context context) {
-		if(instance == null){
+		if (instance == null) {
 			createInstance(context);
 		}
 
@@ -142,7 +149,7 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 		initialConnectionState = NetworkUtil.getInstance().isConnected();
 		isOfflineCachingOn = !initialConnectionState;
 		CurioLogger.d(TAG, "Initial network connection state is: " + initialConnectionState);
-		
+
 		CurioDBHelper.createInstance(this);
 		CurioLogger.d(TAG, "Finished creating Curio Client on " + System.currentTimeMillis());
 	}
@@ -151,99 +158,93 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 	 * Loads all parameters from curio.xml of parent application.
 	 */
 	private void loadParametersFromResource() {
-			/**
-			 * We're loading parameters on a different thread, 
-			 * because big G. wants us to get AdId on a thread other than main.
-			 */
-			new Thread(new Runnable() {
-				@Override
-				public void run() {
-					String visitorCode = null;
-					String apiKey = CurioClientSettings.getInstance(context).getApiKey();
-					int sessionTimeout = CurioClientSettings.getInstance(context).getSessionTimeout();
-					isPeriodicDispatchEnabled = CurioClientSettings.getInstance(context).isPeriodicDispatchEnabled();
-					String trackingCode = CurioClientSettings.getInstance(context).getTrackingCode();
-					
-					if (Build.VERSION.SDK_INT >= Constants.GINGERBREAD_2_3_3_SDK_INT) {
-						Info adInfo = null;
-						try {
+		/**
+		 * We're loading parameters on a different thread, because big G. wants us to get AdId on a thread other than main.
+		 */
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				String visitorCode = null;
+				String apiKey = CurioClientSettings.getInstance(context).getApiKey();
+				int sessionTimeout = CurioClientSettings.getInstance(context).getSessionTimeout();
+				isPeriodicDispatchEnabled = CurioClientSettings.getInstance(context).isPeriodicDispatchEnabled();
+				String trackingCode = CurioClientSettings.getInstance(context).getTrackingCode();
+				String gcmSenderId = CurioClientSettings.getInstance(context).getGcmSenderId();
+				boolean autoPushRegistration = CurioClientSettings.getInstance(context).isAutoPushRegistration();
 
-							CurioLogger.d(TAG, "Trying to get AdId...");
-							adInfo = AdvertisingIdClient.getAdvertisingIdInfo(context);
-							CurioLogger.d(TAG, "Fetched AdId is " + adInfo);
+				if (Build.VERSION.SDK_INT >= Constants.GINGERBREAD_2_3_3_SDK_INT) {
+					Info adInfo = null;
+					try {
 
-						} catch (IOException e) {
-							// Unrecoverable error connecting to Google Play services.
-							isAdIdAvailable = false;
-						} catch (GooglePlayServicesNotAvailableException e) {
-							// Google Play services is not available entirely.
-							isAdIdAvailable = false;
-						} catch (GooglePlayServicesRepairableException e) {
-							// Google Play services recoverable exception.
-							isAdIdAvailable = false;
-							e.printStackTrace();
-						} catch (IllegalStateException e) {
-							//Ignore since we're not calling it on main thread.
-						}
+						CurioLogger.d(TAG, "Trying to get AdId...");
+						adInfo = AdvertisingIdClient.getAdvertisingIdInfo(context);
+						CurioLogger.d(TAG, "Fetched AdId is " + adInfo);
 
-						if(isAdIdAvailable == null && adInfo != null){ //Not set, so we did not get an exception from big G. Play Services.
-							isAdIdAvailable = !adInfo.isLimitAdTrackingEnabled(); //Check user prefs.
+					} catch (IOException e) {
+						// Unrecoverable error connecting to Google Play services.
+						isAdIdAvailable = false;
+					} catch (GooglePlayServicesNotAvailableException e) {
+						// Google Play services is not available entirely.
+						isAdIdAvailable = false;
+					} catch (GooglePlayServicesRepairableException e) {
+						// Google Play services recoverable exception.
+						isAdIdAvailable = false;
+						e.printStackTrace();
+					} catch (IllegalStateException e) {
+						// Ignore since we're not calling it on main thread.
+					}
 
-							if(isAdIdAvailable){
-								visitorCode = adInfo.getId();
-							} else {
-								visitorCode = VisitorCodeManager.id(trackingCode, context);
-							}
-						}else{ //Not null and it's false, cannot use ad Id as visitor code.
-							CurioLogger.d(TAG, "Ad Id is not available on device yet or cannot fetch Ad Id. So generating visitor code manually.");
+					if (isAdIdAvailable == null && adInfo != null) { // Not set, so we did not get an exception from big G. Play Services.
+						isAdIdAvailable = !adInfo.isLimitAdTrackingEnabled(); // Check user prefs.
+
+						if (isAdIdAvailable) {
+							visitorCode = adInfo.getId();
+						} else {
 							visitorCode = VisitorCodeManager.id(trackingCode, context);
 						}
-					}else
-					{
-						CurioLogger.d(TAG, "Ad Id is not available because of SDK level. So generating visitor code manually.");
+					} else { // Not null and it's false, cannot use ad Id as visitor code.
+						CurioLogger.d(TAG, "Ad Id is not available on device yet or cannot fetch Ad Id. So generating visitor code manually.");
 						visitorCode = VisitorCodeManager.id(trackingCode, context);
 					}
-
-					setUrlPrefix(CurioClientSettings.getInstance(context).getServerUrl());
-
-					if (isPeriodicDispatchEnabled) {
-						dispatchPeriod = CurioClientSettings.getInstance(context).getDispatchPeriod();
-						
-						if(dispatchPeriod >= sessionTimeout){
-							CurioLogger.w(TAG, "Dispatch period cannot be greater or equal to session timeout.");
-							dispatchPeriod = sessionTimeout - 1;
-							CurioClientSettings.getInstance(context).setDispatchPeriod(dispatchPeriod);
-							CurioLogger.i(TAG, "Periodic dispatch is ENABLED.");
-							CurioLogger.i(TAG, "Dispatch period is " + dispatchPeriod + " minutes");
-						}
-					}
-
-					staticFeatureSet = new StaticFeatureSet(apiKey, trackingCode, visitorCode, sessionTimeout);
-					setParamLoadingFinished(true);
-					CurioLogger.d(TAG, "Finished loading params and created static feature set on " + System.currentTimeMillis());
+				} else {
+					CurioLogger.d(TAG, "Ad Id is not available because of SDK level. So generating visitor code manually.");
+					visitorCode = VisitorCodeManager.id(trackingCode, context);
 				}
-			}).start();
+
+				setUrlPrefix(CurioClientSettings.getInstance(context).getServerUrl());
+
+				if (isPeriodicDispatchEnabled) {
+					dispatchPeriod = CurioClientSettings.getInstance(context).getDispatchPeriod();
+
+					if (dispatchPeriod >= sessionTimeout) {
+						CurioLogger.w(TAG, "Dispatch period cannot be greater or equal to session timeout.");
+						dispatchPeriod = sessionTimeout - 1;
+						CurioClientSettings.getInstance(context).setDispatchPeriod(dispatchPeriod);
+						CurioLogger.i(TAG, "Periodic dispatch is ENABLED.");
+						CurioLogger.i(TAG, "Dispatch period is " + dispatchPeriod + " minutes");
+					}
+				}
+
+				staticFeatureSet = new StaticFeatureSet(apiKey, trackingCode, visitorCode, sessionTimeout, gcmSenderId, autoPushRegistration);
+				setParamLoadingFinished(true);
+				CurioLogger.d(TAG, "Finished loading params and created static feature set on " + System.currentTimeMillis());
+			}
+		}).start();
 	}
-	
+
 	/**
-	 * Starts a session at server and generates a new session code. 
+	 * Starts a session at server and generates a new session code.
 	 * 
-	 * Should be called at onCreate of application's main activity. 
-	 * Should always be called before any other analytic methods. 
-	 * Should be called once per application
-	 * session.
+	 * Should be called at onCreate of application's main activity. Should always be called before any other analytic methods. Should be called once per application session.
 	 */
-	public void startSession(){
+	public void startSession() {
 		startSession(true);
 	}
 
 	/**
-	 * Starts a session at server. 
+	 * Starts a session at server.
 	 * 
-	 * Should be called at onCreate of application's main activity. 
-	 * Should always be called before any other analytic methods. 
-	 * Should be called once per application
-	 * session.
+	 * Should be called at onCreate of application's main activity. Should always be called before any other analytic methods. Should be called once per application session.
 	 * 
 	 * @param generate - Generates a new session code if true.
 	 */
@@ -251,7 +252,7 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 		/**
 		 * If configuration param loading is not finished, post a delayed request again in 100 ms.
 		 */
-		if(!isParamLoadingFinished()){
+		if (!isParamLoadingFinished()) {
 			CurioLogger.d(TAG, "startSession called but config param loading is not finished yet, will try in 100 ms again.");
 			new Handler().postDelayed(new Runnable() {
 				@Override
@@ -261,7 +262,7 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 			}, 100);
 			return;
 		}
-		
+
 		// Create parameter map and add dynamic data values. Static data values will be added before sending request.
 		Map<String, Object> params = new HashMap<String, Object>();
 		params.put(Constants.HTTP_PARAM_SESSION_CODE, getSessionCode(generate));
@@ -275,6 +276,13 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 					CurioLogger.e(TAG, "Failed to start session on server due to wrong account parameters");
 				} else if (statusCode == HttpStatus.SC_OK) {
 					CurioLogger.d(TAG, "Session start is successful. Session code is " + instance.getSessionCode(false));
+					if(getStaticFeatureSet().autoPushRegistration){ //If auto push registration enabled
+						if (pushMessageId == null) {
+							PushUtil.checkForGCMRegistration(context);
+						} else {
+							sendPushOpenedMsg();
+						}
+					}
 				} else {
 					CurioLogger.e(TAG, "Failed to start session on server. Server returned status code: " + statusCode);
 				}
@@ -666,7 +674,7 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 	 * 
 	 * @param offlineRequest
 	 */
-	public void addRequestToOfflineCache(OfflineRequest offlineRequest) {
+	protected void addRequestToOfflineCache(OfflineRequest offlineRequest) {
 		CurioLogger.d(TAG, "[OFFLINE REQ] added to queue. URL:" + offlineRequest.getUrl() + ", SC: " + offlineRequest.getParams().get(Constants.HTTP_PARAM_SESSION_CODE) + ", HC:"
 				+ offlineRequest.getParams().get(Constants.HTTP_PARAM_HIT_CODE));
 		setOfflineRequestExist(true);
@@ -695,9 +703,108 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 			CurioLogger.i(TAG, "Offline cache is ENABLED.");
 		}
 	}
+	
+	/**
+	 * 
+	 * @param customId 
+	 */
+	private void sendPushOpenedMsg() {
+		Map<String, Object> params = new HashMap<String, Object>();
+		params.put(Constants.HTTP_PARAM_PUSH_TOKEN, PushUtil.getStoredRegistrationId(context));
+		params.put(Constants.HTTP_PARAM_VISITOR_CODE, getStaticFeatureSet().getVisitorCode());
+		params.put(Constants.HTTP_PARAM_TRACKING_CODE, getStaticFeatureSet().getTrackingCode());
+		params.put(Constants.HTTP_PARAM_SESSION_CODE, sessionCode);
+		params.put(Constants.HTTP_PARAM_PUSH_ID, pushMessageId);
+		
+		if(customId != null){
+			params.put(Constants.HTTP_PARAM_CUSTOM_ID, customId);
+		}
 
-	public void setOfflineRequestDispatchAsFinished() {
+		ICurioResultListener callback = new ICurioResultListener() {
+			@Override
+			public void handleResult(int statusCode, JSONObject result) {
+				if (statusCode == HttpStatus.SC_OK) {
+					CurioLogger.d(TAG, "Push message id sent to push server.");
+					setPushId(null);
+				}
+			}
+		};
+		
+		String pushServerURL = CurioUtil.formatUrlPrefix(CurioClientSettings.getInstance(context).getServerUrl()) + Constants.SERVER_URL_SUFFIX_PUSH_DATA;
+
+		OnlineRequest onlineRequest = new OnlineRequest(pushServerURL, params, callback, CurioRequestProcessor.FIRST_PRIORITY);
+		CurioRequestProcessor.pushToOnlineQueue(onlineRequest);
+	}
+	
+	/**
+	 * 
+	 * @param context
+	 * @param registrationId
+	 */
+	public void sendRegistrationId(Context context, final String registrationId) {
+		Map<String, Object> params = new HashMap<String, Object>();
+		params.put(Constants.HTTP_PARAM_PUSH_TOKEN, registrationId);
+		params.put(Constants.HTTP_PARAM_VISITOR_CODE, getStaticFeatureSet().getVisitorCode());
+		params.put(Constants.HTTP_PARAM_TRACKING_CODE, getStaticFeatureSet().getTrackingCode());
+		params.put(Constants.HTTP_PARAM_SESSION_CODE, sessionCode);
+		
+		if(customId != null){
+			params.put(Constants.HTTP_PARAM_CUSTOM_ID, customId);
+		}
+
+		ICurioResultListener callback = new ICurioResultListener() {
+			@Override
+			public void handleResult(int statusCode, JSONObject result) {
+				if (statusCode == HttpStatus.SC_OK) {
+					CurioLogger.d(TAG, "Registration id has been sent to push server.");
+				}
+			}
+		};
+		
+		String pushServerURL = CurioUtil.formatUrlPrefix(CurioClientSettings.getInstance(context).getServerUrl()) + Constants.SERVER_URL_SUFFIX_PUSH_DATA;
+
+		OnlineRequest onlineRequest = new OnlineRequest(pushServerURL, params, callback, CurioRequestProcessor.FIRST_PRIORITY);
+		CurioRequestProcessor.pushToOnlineQueue(onlineRequest);
+	}
+	
+	/**
+	 * Gets the id in push notification payload and send it to push server.
+	 * 
+	 * Should be used only push notificaton is enabled in the application.
+	 * 
+	 * @param intent
+	 */
+	public void getPushData(Intent intent) {
+		if (intent.getExtras() != null) {
+			String pushId = intent.getExtras().getString(Constants.PAYLOAD_KEY_PUSH_TOKEN);
+
+			if (pushId != null && (intent.getFlags() & Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) == 0) {
+				setPushId(pushId);
+			}
+		}
+	}
+
+	protected void setOfflineRequestDispatchAsFinished() {
 		isOfflineRequestDispatchInProgress = false;
+	}
+
+	/**
+	 * Dispatch push request result to curio server
+	 * 
+	 * @param pushId
+	 */
+
+	private void setPushId(final String pushId) {
+		this.pushMessageId = pushId;
+	}
+	
+	/**
+	 * Custom id. Optional use.
+	 * 
+	 * @param customParam
+	 */
+	public void setCustomParameter(String customId) {
+		this.customId  = customId;
 	}
 
 	/**
@@ -753,7 +860,7 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 	}
 
 	/**
-	 * Holder class for features that is not changing, mostly device specific features. 
+	 * Holder class for features that is not changing, mostly device specific features.
 	 * 
 	 * @author Can Ciloglu
 	 *
@@ -779,8 +886,10 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 		private String osVersion;
 		private String sdkVersion;
 		private String appVersionName;
+		private String gcmSenderId;
+		private boolean autoPushRegistration;
 
-		public StaticFeatureSet(String apiKey, String trackingCode, String visitorCode, int sessionTimeout) {
+		public StaticFeatureSet(String apiKey, String trackingCode, String visitorCode, int sessionTimeout, String gcmSenderId, boolean autoPushRegistration) {
 			// Get screen sizes
 			WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
 			Display d = wm.getDefaultDisplay();
@@ -799,7 +908,7 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 				d.getRealSize(realSize);
 				screenWidth = realSize.x;
 				screenHeight = realSize.y;
-			}else{
+			} else {
 				CurioLogger.d(TAG, "Display.getRealSize() is not available for this SDK Level. Will not get real screen size.");
 			}
 
@@ -812,7 +921,7 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 				d.getSize(size);
 				activityWidth = size.x;
 				activityHeight = size.y;
-			}else{
+			} else {
 				CurioLogger.d(TAG, "Display.getSize() is not available for this SDK Level. Will not get screen size.");
 			}
 
@@ -849,6 +958,8 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 			this.osVersion = Integer.toString(android.os.Build.VERSION.SDK_INT);
 			this.sdkVersion = Constants.CURIO_SDK_VER;
 			this.appVersionName = appVersionName;
+			this.gcmSenderId = gcmSenderId;
+			this.autoPushRegistration = autoPushRegistration;
 		}
 
 		public String getApiKey() {
@@ -930,21 +1041,30 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 		public String getAppVersionName() {
 			return appVersionName;
 		}
+
+		public String getGcmSenderId() {
+			return gcmSenderId;
+		}
+
+		public boolean isAutoPushRegistration() {
+			return autoPushRegistration;
+		}
+
 	}
 
-	public boolean offlineRequestExist() {
+	protected boolean offlineRequestExist() {
 		return offlineReqExists;
 	}
 
-	public void setOfflineRequestExist(boolean exist) {
+	protected void setOfflineRequestExist(boolean exist) {
 		offlineReqExists = exist;
 	}
 
-	public boolean isParamLoadingFinished() {
+	protected boolean isParamLoadingFinished() {
 		return isParamLoadingFinished;
 	}
 
-	public void setParamLoadingFinished(boolean isParamLoadingFinished) {
+	protected void setParamLoadingFinished(boolean isParamLoadingFinished) {
 		this.isParamLoadingFinished = isParamLoadingFinished;
 	}
 }
