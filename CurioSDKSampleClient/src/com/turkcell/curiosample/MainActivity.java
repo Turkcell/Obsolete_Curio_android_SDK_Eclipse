@@ -17,9 +17,9 @@ import android.widget.TextView;
 import com.turkcell.curio.CurioClient;
 
 public class MainActivity extends FragmentActivity implements ActionBar.OnNavigationListener {
-	
+
 	private static final String TAG = "MainActivity";
-	
+
 	/**
 	 * The serialization (saved instance state) Bundle key representing the current dropdown position.
 	 */
@@ -28,14 +28,17 @@ public class MainActivity extends FragmentActivity implements ActionBar.OnNaviga
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		Log.i(TAG, "onCreate called. isFinishing: " + isFinishing());
+
+		//If your application receives push notification. Optional
+		CurioClient.getInstance(this).getPushData(getIntent());
 		
+		//Custom id. Optional.
+		CurioClient.getInstance(this).setCustomParameter("sampleCustomId");
+		
+		//Start session
 		CurioClient.getInstance(this).startSession();
-		
+
 		setContentView(R.layout.activity_main);
-		
-		Log.i(TAG, getResources().getInteger(R.integer.session_timeout) + "");
-		Log.i(TAG, getResources().getBoolean(R.bool.periodic_dispatch_enabled) + "");
 
 		// Set up the action bar to show a dropdown list.
 		final ActionBar actionBar = getActionBar();
@@ -94,7 +97,7 @@ public class MainActivity extends FragmentActivity implements ActionBar.OnNaviga
 
 		public DummySectionFragment() {
 		}
-		
+
 		@Override
 		public void onStart() {
 			super.onStart();
@@ -108,7 +111,7 @@ public class MainActivity extends FragmentActivity implements ActionBar.OnNaviga
 			TextView dummyTextView = (TextView) rootView.findViewById(R.id.section_label);
 			sectionId = getArguments().getInt(ARG_SECTION_NUMBER);
 			dummyTextView.setText(sectionId + "");
-			
+
 			switch (sectionId) {
 			case 1:
 				rootView.setBackgroundColor(Color.CYAN);
@@ -125,40 +128,39 @@ public class MainActivity extends FragmentActivity implements ActionBar.OnNaviga
 			}
 			return rootView;
 		}
-		
+
 		@Override
 		public void onStop() {
 			super.onStop();
 			Log.i(TAG, "onStop of fragment");
 			CurioClient.getInstance(getActivity()).endScreen(this.getClass().toString() + sectionId);
 		}
-		
+
 		@Override
 		public void onDestroy() {
 			super.onDestroy();
 			Log.i(TAG, "onDestroy of fragment");
 		}
 	}
-	
-	
-	public void startNewActivity(View v){
+
+	public void startNewActivity(View v) {
 		CurioClient.getInstance(this).sendEvent("buttonClick", "start button");
 		Intent intent = new Intent(this, BlankActivity.class);
 		startActivity(intent);
 	}
-	
+
 	@Override
 	protected void onStart() {
 		super.onStart();
 		Log.i(TAG, "onStart called. isFinishing: " + isFinishing());
 	}
-	
+
 	@Override
 	protected void onResume() {
 		super.onResume();
 		Log.i(TAG, "onResume called. isFinishing: " + isFinishing());
 	}
-	
+
 	@Override
 	protected void onPause() {
 		super.onPause();
@@ -168,12 +170,12 @@ public class MainActivity extends FragmentActivity implements ActionBar.OnNaviga
 	@Override
 	protected void onStop() {
 		super.onStop();
-		if(isFinishing()){
+		if (isFinishing()) {
 			CurioClient.getInstance(this).endSession();
 		}
 		Log.i(TAG, "onStop called. isFinishing: " + isFinishing());
 	}
-	
+
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
