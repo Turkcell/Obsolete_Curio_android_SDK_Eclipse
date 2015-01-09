@@ -111,7 +111,7 @@ For sending received push notification data to Curio push server, getPushData(In
 	}
 	
 ###Sending Custom Id (if push is enabled):
-For sending custom id to Curio server, setCustomParameter(String) method should be called. This method should be called before startSession() method as below:
+For sending custom id to Curio server, setCustomId(String) method should be called. This method should be called before startSession() method as below:
 
 	protected void onCreate(Bundle savedInstanceState) {
 		...
