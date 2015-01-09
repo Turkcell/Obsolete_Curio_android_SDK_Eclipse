@@ -803,7 +803,7 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 	 * 
 	 * @param customParam
 	 */
-	public void setCustomParameter(String customId) {
+	public void setCustomId(String customId) {
 		this.customId  = customId;
 	}
 

@@ -33,7 +33,7 @@ public class MainActivity extends FragmentActivity implements ActionBar.OnNaviga
 		CurioClient.getInstance(this).getPushData(getIntent());
 		
 		//Custom id. Optional.
-		CurioClient.getInstance(this).setCustomParameter("sampleCustomId");
+		CurioClient.getInstance(this).setCustomId("sampleCustomId");
 		
 		//Start session
 		CurioClient.getInstance(this).startSession();
