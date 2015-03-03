@@ -25,7 +25,7 @@ public class BlankActivity extends Activity {
 			
 			@Override
 			public void onClick(View v) {
-				CurioClient.getInstance(BlankActivity.this).sendCustomId("sample custom id");
+				CurioClient.getInstance(BlankActivity.this).sendCustomId("sampleCustomId");
 			}
 		});
 		
