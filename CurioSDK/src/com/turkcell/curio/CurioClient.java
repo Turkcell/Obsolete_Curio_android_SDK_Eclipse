@@ -74,6 +74,7 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 	protected boolean isSessionStartSent;
 	private String pushMessageId = null;
 	private String customId = null;
+	private boolean isTriggeredByUnregisterRequest = false;
 
 	/**
 	 * Be sure to call createInstance first.
@@ -246,7 +247,8 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 	 * 
 	 * Should be called at onCreate of application's main activity. Should always be called before any other analytic methods. Should be called once per application session.
 	 * 
-	 * @param generate - Generates a new session code if true.
+	 * @param generate
+	 *            - Generates a new session code if true.
 	 */
 	public void startSession(final boolean generate) {
 		/**
@@ -270,15 +272,19 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 		ICurioResultListener callback = new ICurioResultListener() {
 			@Override
 			public void handleResult(int statusCode, JSONObject result) {
-				isSessionStartSent = false; //Reset "session start sent" flag.
+				isSessionStartSent = false; // Reset "session start sent" flag.
 				curioRequestProcessor.setLowerPriorityQueueProcessingStatus(true);
 				if (statusCode == HttpStatus.SC_PRECONDITION_FAILED) {
 					CurioLogger.e(TAG, "Failed to start session on server due to wrong account parameters");
 				} else if (statusCode == HttpStatus.SC_OK) {
 					CurioLogger.d(TAG, "Session start is successful. Session code is " + instance.getSessionCode(false));
-					if(getStaticFeatureSet().autoPushRegistration){ //If auto push registration enabled
+					if (getStaticFeatureSet().autoPushRegistration) { // If auto push registration enabled
 						if (pushMessageId == null) {
-							PushUtil.checkForGCMRegistration(context);
+							if (!isTriggeredByUnregisterRequest) {
+								PushUtil.checkForGCMRegistration(context);
+							} else {
+								CurioLogger.d(TAG, "Unregister request is called, so will not send registration id to push server this time.");
+							}
 						} else {
 							sendPushOpenedMsg();
 						}
@@ -289,15 +295,14 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 			}
 		};
 
-		//Session start is a first priority request.
+		// Session start is a first priority request.
 		this.pushRequestToQueue(Constants.SERVER_URL_SUFFIX_SESSION_START, params, callback, CurioRequestProcessor.FIRST_PRIORITY);
 	}
 
 	/**
-	 * Starts a screen at server. 
+	 * Starts a screen at server.
 	 * 
-	 * Should be called at "onStart" of an activity or fragment.
-	 * Should be called once per activity or fragment.
+	 * Should be called at "onStart" of an activity or fragment. Should be called once per activity or fragment.
 	 * 
 	 * @param context
 	 *            Activity which this method be called at.
@@ -311,10 +316,9 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 	}
 
 	/**
-	 * Starts a screen at server. 
+	 * Starts a screen at server.
 	 * 
-	 * Should be called at "onStart" of an activity or fragment. 
-	 * Should be called once per activity or fragment.
+	 * Should be called at "onStart" of an activity or fragment. Should be called once per activity or fragment.
 	 * 
 	 * @param className
 	 *            definitive and unique string for the parent which this method be called at.
@@ -327,9 +331,9 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 		/**
 		 * If configuration param loading is not finished, post a delayed request again in 250 ms.
 		 */
-		if(!isParamLoadingFinished()){
+		if (!isParamLoadingFinished()) {
 			CurioLogger.d(TAG, "startScreen called but config param loading is not finished yet, will try in 250 ms again.");
-			
+
 			new Handler().postDelayed(new Runnable() {
 				@Override
 				public void run() {
@@ -371,12 +375,9 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 							unauthCount++;
 							CurioLogger.d(TAG, "StartScreen - Try count: " + unauthCount);
 							/**
-							 * If sessionStart request not already sent,
-							 * 1-Stop second and third priority request queue processing.
-							 * 2-Send sessionStart request.
-							 * 3-Set sessionStartsent flag.
+							 * If sessionStart request not already sent, 1-Stop second and third priority request queue processing. 2-Send sessionStart request. 3-Set sessionStartsent flag.
 							 */
-							if(!isSessionStartSent){
+							if (!isSessionStartSent) {
 								curioRequestProcessor.setLowerPriorityQueueProcessingStatus(false);
 								startSession(true);
 								isSessionStartSent = true;
@@ -385,11 +386,15 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 						}
 					} else if (statusCode == HttpStatus.SC_OK) {
 						unauthCount = 0;
-						try {
-							String returnedHitCode = result.getString(Constants.JSON_NODE_HIT_CODE);
-							contextHitcodeMap.put(className, new Screen(returnedHitCode, title, path));
-						} catch (JSONException e) {
-							CurioLogger.e(TAG, e.getMessage());
+						if (result != null) {
+							try {
+								String returnedHitCode = result.getString(Constants.JSON_NODE_HIT_CODE);
+								contextHitcodeMap.put(className, new Screen(returnedHitCode, title, path));
+							} catch (JSONException e) {
+								CurioLogger.e(TAG, e.getMessage());
+							}
+						} else {
+							CurioLogger.d(TAG, "Result is null, will not process.");
 						}
 					} else {
 						CurioLogger.e(TAG, "Failed to start screen. Server responded with status code: " + statusCode);
@@ -402,10 +407,9 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 	}
 
 	/**
-	 * Ends the screen at server. 
+	 * Ends the screen at server.
 	 * 
-	 * Should be called at "onStop" of an activity or fragment.
-	 * Should be called once per activity or fragment.
+	 * Should be called at "onStop" of an activity or fragment. Should be called once per activity or fragment.
 	 * 
 	 * @param context
 	 *            Activity which this method be called at.
@@ -417,8 +421,7 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 	/**
 	 * Ends the screen at server.
 	 * 
-	 * Should be called at "onStop" of an activity or fragment.
-	 * Should be called once per activity or fragment.
+	 * Should be called at "onStop" of an activity or fragment. Should be called once per activity or fragment.
 	 * 
 	 * @param className
 	 *            definitive and unique string for the parent which this method be called at.
@@ -427,9 +430,9 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 		/**
 		 * If configuration param loading is not finished, post a delayed request again in 500 ms.
 		 */
-		if(!isParamLoadingFinished()){
+		if (!isParamLoadingFinished()) {
 			CurioLogger.d(TAG, "endScreen called but config param loading is not finished yet, will try in 500 ms again.");
-			
+
 			new Handler().postDelayed(new Runnable() {
 				@Override
 				public void run() {
@@ -438,7 +441,7 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 			}, 500);
 			return;
 		}
-		
+
 		String urlEncodedTitle = "";
 		String urlEncodedPath = "";
 		String hitCode = "";
@@ -456,9 +459,8 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 			} catch (UnsupportedEncodingException e) {
 				e.printStackTrace();
 			}
-		}
-		else{
-			//Means an invalid call
+		} else {
+			// Means an invalid call
 			CurioLogger.d(TAG, "Screen info is null, so ignoring call to end screen.");
 			return;
 		}
@@ -477,14 +479,11 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 					if (unauthCount <= 5) {
 						unauthCount++;
 						CurioLogger.d(TAG, "End Screen - Try count: " + unauthCount);
-						
+
 						/**
-						 * If sessionStart request not already sent,
-						 * 1-Stop second and third priority request queue processing.
-						 * 2-Send sessionStart request.
-						 * 3-Set sessionStartsent flag.
+						 * If sessionStart request not already sent, 1-Stop second and third priority request queue processing. 2-Send sessionStart request. 3-Set sessionStartsent flag.
 						 */
-						if(!isSessionStartSent){
+						if (!isSessionStartSent) {
 							curioRequestProcessor.setLowerPriorityQueueProcessingStatus(false);
 							startSession(true);
 							isSessionStartSent = true;
@@ -503,12 +502,9 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 	}
 
 	/**
-	 * Ends the session at server. 
+	 * Ends the session at server.
 	 * 
-	 * Should be called at onStop of application's main activity. 
-	 * Should be called when user is really exiting from the application. 
-	 * Usage is:
-	 * <br/>
+	 * Should be called at onStop of application's main activity. Should be called when user is really exiting from the application. Usage is: <br/>
 	 * <br/>
 	 * <b>if(isFinishing()){<br/>
 	 * CurioClient.getInstance().endSession();<br/>
@@ -518,22 +514,20 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 	 */
 	public void endSession() {
 		/**
-		 * Be sure to send all stored offline periodic requests before ending session. 
-		 * So release all stored offline requests and call end session again from CurioRequestProcessor.
+		 * Be sure to send all stored offline periodic requests before ending session. So release all stored offline requests and call end session again from CurioRequestProcessor.
 		 */
-		if (!isOfflineCachingOn && isPeriodicDispatchEnabled){
-			if(!endingSession) {//First call so release stored periodic dispatch data. 
+		if (!isOfflineCachingOn && isPeriodicDispatchEnabled) {
+			if (!endingSession) {// First call so release stored periodic dispatch data.
 				curioRequestProcessor.releaseStoredRequests();
 				endingSession = true;
 				return;
-			}else{
-				//Clearing endingSession and release flags. This is important.
+			} else {
+				// Clearing endingSession and release flags. This is important.
 				curioRequestProcessor.cancelReleaseStoredRequestFlag();
 				endingSession = false;
 				CurioLogger.d(TAG, "Cleared endSession and release flags.");
 			}
 		}
-		
 
 		Map<String, Object> params = new HashMap<String, Object>();
 
@@ -549,7 +543,6 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 		this.pushRequestToQueue(Constants.SERVER_URL_SUFFIX_SESSION_END, params, callback, CurioRequestProcessor.THIRD_PRIORITY);
 	}
 
-
 	/**
 	 * Sends an event to server.
 	 * 
@@ -562,9 +555,9 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 		/**
 		 * If configuration param loading is not finished, post a delayed request again in 500 ms.
 		 */
-		if(!isParamLoadingFinished()){
+		if (!isParamLoadingFinished()) {
 			CurioLogger.d(TAG, "sendEvent called but config param loading is not finished yet, will try in 500 ms again.");
-			
+
 			new Handler().postDelayed(new Runnable() {
 				@Override
 				public void run() {
@@ -573,7 +566,7 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 			}, 500);
 			return;
 		}
-		
+
 		String urlEncodedKey = "";
 		String urlEncodedValue = "";
 
@@ -599,14 +592,11 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 					if (unauthCount <= 5) {
 						unauthCount++;
 						CurioLogger.d(TAG, "Send Event - Try count: " + unauthCount);
-						
+
 						/**
-						 * If sessionStart request not already sent,
-						 * 1-Stop second and third priority request queue processing.
-						 * 2-Send sessionStart request.
-						 * 3-Set sessionStartsent flag.
+						 * If sessionStart request not already sent, 1-Stop second and third priority request queue processing. 2-Send sessionStart request. 3-Set sessionStartsent flag.
 						 */
-						if(!isSessionStartSent){
+						if (!isSessionStartSent) {
 							curioRequestProcessor.setLowerPriorityQueueProcessingStatus(false);
 							startSession(true);
 							isSessionStartSent = true;
@@ -653,14 +643,16 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 				DBRequestProcessor.pushToPeriodicDispatchDBQueue(offlineRequest);
 			} else {
 				OnlineRequest onlineRequest = new OnlineRequest(url, params, callback, priority);
-				CurioLogger.d(TAG,
+				CurioLogger.d(
+						TAG,
 						"[ONLINE REQ] added to queue. URL:" + url + ", SC: " + onlineRequest.getParams().get(Constants.HTTP_PARAM_SESSION_CODE) + ", HC:"
 								+ onlineRequest.getParams().get(Constants.HTTP_PARAM_HIT_CODE));
 				CurioRequestProcessor.pushToOnlineQueue(onlineRequest);
 			}
 		} else {
 			OfflineRequest offlineRequest = new OfflineRequest(url, params);
-			CurioLogger.d(TAG,
+			CurioLogger.d(
+					TAG,
 					"[OFFLINE REQ] added to queue. URL:" + url + ", SC: " + offlineRequest.getParams().get(Constants.HTTP_PARAM_SESSION_CODE) + ", HC:"
 							+ offlineRequest.getParams().get(Constants.HTTP_PARAM_HIT_CODE));
 			setOfflineRequestExist(true);
@@ -668,7 +660,6 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 		}
 	}
 
-	
 	/**
 	 * Adds given offline request to Offline cache table.
 	 * 
@@ -703,20 +694,25 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 			CurioLogger.i(TAG, "Offline cache is ENABLED.");
 		}
 	}
-	
+
 	/**
 	 * 
-	 * @param customId 
+	 * @param customId
 	 */
 	private void sendPushOpenedMsg() {
+		if (!getStaticFeatureSet().autoPushRegistration) {
+			CurioLogger.e(TAG, "Curio Auto Push Registration is disabled. You cannot call sendPushOpenedMsg() method.");
+			return;
+		}
+		
 		Map<String, Object> params = new HashMap<String, Object>();
 		params.put(Constants.HTTP_PARAM_PUSH_TOKEN, PushUtil.getStoredRegistrationId(context));
 		params.put(Constants.HTTP_PARAM_VISITOR_CODE, getStaticFeatureSet().getVisitorCode());
 		params.put(Constants.HTTP_PARAM_TRACKING_CODE, getStaticFeatureSet().getTrackingCode());
 		params.put(Constants.HTTP_PARAM_SESSION_CODE, sessionCode);
 		params.put(Constants.HTTP_PARAM_PUSH_ID, pushMessageId);
-		
-		if(customId != null){
+
+		if (customId != null) {
 			params.put(Constants.HTTP_PARAM_CUSTOM_ID, customId);
 		}
 
@@ -729,44 +725,67 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 				}
 			}
 		};
-		
+
 		String pushServerURL = CurioUtil.formatUrlPrefix(CurioClientSettings.getInstance(context).getServerUrl()) + Constants.SERVER_URL_SUFFIX_PUSH_DATA;
 
-		OnlineRequest onlineRequest = new OnlineRequest(pushServerURL, params, callback, CurioRequestProcessor.FIRST_PRIORITY);
+		OnlineRequest onlineRequest = new OnlineRequest(pushServerURL, params, callback, CurioRequestProcessor.SECOND_PRIORITY);
 		CurioRequestProcessor.pushToOnlineQueue(onlineRequest);
 	}
-	
+
 	/**
+	 * This method is not intended to be called directly. Calling this method directly can cause invalid session errors.
 	 * 
 	 * @param context
 	 * @param registrationId
 	 */
 	public void sendRegistrationId(Context context, final String registrationId) {
+		if (!getStaticFeatureSet().autoPushRegistration) {
+			CurioLogger.e(TAG, "Curio Auto Push Registration is disabled. You cannot call sendRegistrationId() method.");
+			return;
+		}
+		
 		Map<String, Object> params = new HashMap<String, Object>();
 		params.put(Constants.HTTP_PARAM_PUSH_TOKEN, registrationId);
 		params.put(Constants.HTTP_PARAM_VISITOR_CODE, getStaticFeatureSet().getVisitorCode());
 		params.put(Constants.HTTP_PARAM_TRACKING_CODE, getStaticFeatureSet().getTrackingCode());
 		params.put(Constants.HTTP_PARAM_SESSION_CODE, sessionCode);
-		
-		if(customId != null){
+
+		if (customId != null) {
 			params.put(Constants.HTTP_PARAM_CUSTOM_ID, customId);
 		}
 
 		ICurioResultListener callback = new ICurioResultListener() {
 			@Override
 			public void handleResult(int statusCode, JSONObject result) {
-				if (statusCode == HttpStatus.SC_OK) {
-					CurioLogger.d(TAG, "Registration id has been sent to push server.");
+				if (statusCode == HttpStatus.SC_UNAUTHORIZED) {
+					if (unauthCount <= 5) {
+						unauthCount++;
+						CurioLogger.d(TAG, "SendRegistrationId - Try count: " + unauthCount);
+						/**
+						 * If sessionStart request not already sent, 1-Stop second and third priority request queue processing. 2-Send sessionStart request. 3-Set sessionStartsent flag.
+						 */
+						if (!isSessionStartSent) {
+							curioRequestProcessor.setLowerPriorityQueueProcessingStatus(false);
+							startSession(true);
+							isSessionStartSent = true;
+						}
+						sendRegistrationId(getContext(), registrationId);
+					}
+				} else if (statusCode == HttpStatus.SC_OK) {
+					unauthCount = 0;
+					CurioLogger.d(TAG, "Registration id has been successfull sent to push server.");
+				} else {
+					CurioLogger.e(TAG, "Failed to send registration id. Server responded with status code: " + statusCode);
 				}
 			}
 		};
-		
+
 		String pushServerURL = CurioUtil.formatUrlPrefix(CurioClientSettings.getInstance(context).getServerUrl()) + Constants.SERVER_URL_SUFFIX_PUSH_DATA;
 
-		OnlineRequest onlineRequest = new OnlineRequest(pushServerURL, params, callback, CurioRequestProcessor.FIRST_PRIORITY);
+		OnlineRequest onlineRequest = new OnlineRequest(pushServerURL, params, callback, CurioRequestProcessor.SECOND_PRIORITY);
 		CurioRequestProcessor.pushToOnlineQueue(onlineRequest);
 	}
-	
+
 	/**
 	 * Gets the id in push notification payload and send it to push server.
 	 * 
@@ -793,18 +812,105 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 	 * 
 	 * @param pushId
 	 */
-
 	private void setPushId(final String pushId) {
 		this.pushMessageId = pushId;
 	}
-	
+
 	/**
 	 * Custom id. Optional use.
 	 * 
 	 * @param customParam
 	 */
 	public void setCustomId(String customId) {
-		this.customId  = customId;
+		this.customId = customId;
+
+		// Set this flag false to enable sending registration id to push server.
+		// So, if user called setCustomId(), we should set this to false.
+		isTriggeredByUnregisterRequest = false;
+	}
+
+	/**
+	 * Sends custom id to push notification server.
+	 * 
+	 * Before calling this method GCM registration id should be acquired and ready, or this method will not send custom id to the server.
+	 * 
+	 * @param customId
+	 */
+	public void sendCustomId(String customId) {
+		if (!getStaticFeatureSet().autoPushRegistration) {
+			CurioLogger.e(TAG, "Curio Auto Push Registration is disabled. You cannot call sendCustomId() method.");
+			return;
+		}
+
+		setCustomId(customId);
+
+		String registrationId = PushUtil.getStoredRegistrationId(context);
+
+		if (registrationId == null) {
+			PushUtil.checkForGCMRegistration(context);
+		} else{
+			sendRegistrationId(context, registrationId);
+		}
+	}
+
+	/**
+	 * Unregisters parent app from push server.
+	 */
+	public void unregisterFromNotificationServer() {
+		if (!getStaticFeatureSet().autoPushRegistration) {
+			CurioLogger.e(TAG, "Curio Auto Push Registration is disabled. You cannot call unregisterFromNotificationServer() method.");
+			return;
+		}
+
+		String registrationId = PushUtil.getStoredRegistrationId(context);
+
+		if (registrationId != null) {
+			Map<String, Object> params = new HashMap<String, Object>();
+			params.put(Constants.HTTP_PARAM_PUSH_TOKEN, registrationId);
+			params.put(Constants.HTTP_PARAM_VISITOR_CODE, getStaticFeatureSet().getVisitorCode());
+			params.put(Constants.HTTP_PARAM_TRACKING_CODE, getStaticFeatureSet().getTrackingCode());
+			params.put(Constants.HTTP_PARAM_SESSION_CODE, sessionCode);
+			params.put(Constants.HTTP_PARAM_CUSTOM_ID, customId);
+
+			ICurioResultListener callback = new ICurioResultListener() {
+				@Override
+				public void handleResult(int statusCode, JSONObject result) {
+					if (statusCode == HttpStatus.SC_UNAUTHORIZED) {
+						if (unauthCount <= 5) {
+							unauthCount++;
+							CurioLogger.d(TAG, "Unregister - Try count: " + unauthCount);
+							/**
+							 * If sessionStart request not already sent, 1-Stop second and third priority request queue processing. 2-Send sessionStart request. 3-Set sessionStartsent flag.
+							 */
+							if (!isSessionStartSent) {
+								curioRequestProcessor.setLowerPriorityQueueProcessingStatus(false);
+
+								// This flag prevents re-registration at push server when session started again.
+								// To enable push server registration again, setCustomId() or sendCustomId() methods should be called,
+								// or application instance should be killed.
+								isTriggeredByUnregisterRequest = true;
+								startSession(true);
+								isSessionStartSent = true;
+							}
+							unregisterFromNotificationServer();
+						}
+					} else if (statusCode == HttpStatus.SC_OK) {
+						unauthCount = 0;
+						PushUtil.deleteRegistrationId(context);
+						CurioLogger.d(TAG, "Unregister request successfully send to push server.");
+					} else {
+						CurioLogger.e(TAG, "Failed to unregister. Server responded with status code: " + statusCode);
+					}
+				}
+			};
+
+			String pushServerURL = CurioUtil.formatUrlPrefix(CurioClientSettings.getInstance(context).getServerUrl()) + Constants.SERVER_URL_SUFFIX_UNREGISTER;
+
+			OnlineRequest onlineRequest = new OnlineRequest(pushServerURL, params, callback, CurioRequestProcessor.SECOND_PRIORITY);
+			CurioRequestProcessor.pushToOnlineQueue(onlineRequest);
+		} else {
+			CurioLogger.w(TAG, "No GCM registration id found. Unregister request will not be sent.");
+		}
 	}
 
 	/**
@@ -898,7 +1004,7 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 			int screenHeight = 0;
 			int activityWidth = 0;
 			int activityHeight = 0;
-			
+
 			/**
 			 * Display.getRealSize() is not available below API level 17.
 			 */

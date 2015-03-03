@@ -465,7 +465,7 @@ public class CurioRequestProcessor implements Runnable {
 		List<NameValuePair> pairs = generatePairsForOnlineRequest(onlineRequest.getParams(), url);
 		ICurioResultListener callback = onlineRequest.getCallback();
 
-		CurioLogger.d(TAG, "URL : " + url);
+		CurioLogger.d(TAG, "POST REQUEST for URL: " + url);
 
 		HttpClient client = new DefaultHttpClient();
 		HttpPost post = new HttpPost(url);
@@ -482,7 +482,7 @@ public class CurioRequestProcessor implements Runnable {
 			ResponseHandler<String> responseHandler = new BasicResponseHandler();
 			response = responseHandler.handleResponse(httpResponse);
 
-			CurioLogger.d(TAG, "RESPONSE : " + response);
+			CurioLogger.d(TAG, "RESPONSE: " + response + " for URL:" + url);
 
 			if (response != null && !(response.trim().length() == 0)) {
 				try {

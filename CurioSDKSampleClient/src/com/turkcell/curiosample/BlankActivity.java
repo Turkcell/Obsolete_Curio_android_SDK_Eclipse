@@ -4,6 +4,9 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
 
 import com.turkcell.curio.CurioClient;
 
@@ -16,6 +19,24 @@ public class BlankActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		Log.i(TAG, "onCreate called. isFinishing: " + isFinishing());
 		setContentView(R.layout.activity_blank);
+		
+		Button btnSendCustomId = (Button)findViewById(R.id.sendCustomId);
+		btnSendCustomId.setOnClickListener(new OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				CurioClient.getInstance(BlankActivity.this).sendCustomId("sample custom id");
+			}
+		});
+		
+		Button btnUnregister = (Button)findViewById(R.id.unregister);
+		btnUnregister.setOnClickListener(new OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				CurioClient.getInstance(BlankActivity.this).unregisterFromNotificationServer();
+			}
+		});
 	}
 
 	@Override

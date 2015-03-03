@@ -32,7 +32,7 @@ public class PushUtil {
 	private static boolean checkPlayServices(Context context) {
 		int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(context);
 		if (resultCode != ConnectionResult.SUCCESS) {
-			Log.e(TAG, "This device does not support Google Play Services.");
+			CurioLogger.e(TAG, "This device does not support Google Play Services.");
 			return false;
 		}
 		return true;
@@ -56,10 +56,17 @@ public class PushUtil {
 					}
 				});
 				gcmRegisterThread.start();
+			}else {
+				CurioClient.getInstance().sendRegistrationId(context, gcmRegistrationId);
 			}
 		}
 	}
 
+	/**
+	 * Saves GCM registration id to shared prefs.
+	 * 
+	 * @param context
+	 */
 	private static void storeRegistrationId(Context context, String gcmRegistrationId) {
 		SharedPreferences sharedPreferences = context.getSharedPreferences(Constants.SHARED_PREF_NAME_GCM, Context.MODE_PRIVATE);
 		SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -68,6 +75,11 @@ public class PushUtil {
 		editor.commit();
 	}
 
+	/**
+	 * Gets stored GCM registration id from shared prefs.
+	 * 
+	 * @param context
+	 */
 	public static String getStoredRegistrationId(Context context) {
 		SharedPreferences sharedPreferences = context.getSharedPreferences(Constants.SHARED_PREF_NAME_GCM, Context.MODE_PRIVATE);
 		String registrationId = sharedPreferences.getString(Constants.SHARED_PREF_KEY_GCM_REGID, null);
@@ -76,6 +88,21 @@ public class PushUtil {
 			return null;
 		}
 		return registrationId;
+	}
+	
+
+	/**
+	 * Deletes stored GCM registration id from shared prefs.
+	 * 
+	 * @param context
+	 */
+	public static void deleteRegistrationId(Context context) {
+		SharedPreferences sharedPreferences = context.getSharedPreferences(Constants.SHARED_PREF_NAME_GCM, Context.MODE_PRIVATE);
+		SharedPreferences.Editor editor = sharedPreferences.edit();
+		editor.remove(Constants.SHARED_PREF_KEY_GCM_REGID);
+		editor.remove(Constants.SHARED_PREF_KEY_APP_VERSION);
+		editor.commit();
+		CurioLogger.d(TAG, "Registration Id removed from shared prefs.");
 	}
 
 	private static int getAppVersion(Context context) {

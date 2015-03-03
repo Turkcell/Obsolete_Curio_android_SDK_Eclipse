@@ -90,6 +90,7 @@ public class Constants {
 	public static final String SERVER_URL_SUFFIX_PERIODIC_BATCH = "/batch/create";
 	public static final String SERVER_URL_SUFFIX_OFFLINE_CACHE = "/offline/create";
 	public static final String SERVER_URL_SUFFIX_PUSH_DATA = "/visitor/setPushData";
+	public static final String SERVER_URL_SUFFIX_UNREGISTER = "/visitor/unregister";
 
 	public static final String UTF8_ENCODING = "utf-8";
 	public static final int NOT_IN_PROCESS = 0;
@@ -111,7 +112,7 @@ public class Constants {
 	public static final int GINGERBREAD_2_3_3_SDK_INT = 10;
 	
 	//Important, update this value on every version update!!!
-	public static final String CURIO_SDK_VER = "1.03";
+	public static final String CURIO_SDK_VER = "1.04";
 	
 	public static final String SHARED_PREF_NAME_GCM = "gcm";
 	public static final String SHARED_PREF_KEY_GCM_REGID = "gcm_registration_id";
