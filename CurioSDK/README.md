@@ -97,34 +97,47 @@ Session ending should be in onStop() method of application's main (or exit) acti
 		...
 	}
 
-###Sending Push Notification Data (if push is enabled):
+###Sending Push Notification Data (if auto push registration is enabled):
 For sending received push notification data to Curio push server, getPushData(Intent) method should be called. This method should be called before startSession() method as below:
 
 	protected void onCreate(Bundle savedInstanceState) {
 		...
 		//If your application receives push notification. Optional
-		CurioClient.getInstance(this).getPushData(getIntent());
+		CurioClient.getInstance(context).getPushData(getIntent());
 		
 		//Start session
-		CurioClient.getInstance(this).startSession();
+		CurioClient.getInstance(context).startSession();
 		...
 	}
 	
-###Sending Custom Id (if push is enabled):
-For sending custom id to Curio server, setCustomId(String) method should be called. This method should be called before startSession() method as below:
+###Sending Custom Id (if auto push registration is enabled):
+For sending custom id to Curio server, setCustomId(String) or sendCustomId(String) method should be called. If setCustomId(String) method is used than it should be called before startSession() method as below:
 
 	protected void onCreate(Bundle savedInstanceState) {
 		...
 		//If your application receives push notification. Optional
-		CurioClient.getInstance(this).getPushData(getIntent());
+		CurioClient.getInstance(context).getPushData(getIntent());
 		
 		//Custom id. Optional.
-		CurioClient.getInstance(this).setCustomId("sampleCustomId");
+		CurioClient.getInstance(context).setCustomId("sampleCustomId");
 		
 		//Start session
-		CurioClient.getInstance(this).startSession();
+		CurioClient.getInstance(context).startSession();
 		...
 	}
+	
+or you can call sendCustomId(String) method any time in your app after you call startSession() as below:
+
+	...
+	CurioClient.getInstance(context).sendCustomId("sampleCustomId");
+	...
+
+###Unregistering from Push Notification Server (if auto push registration is enabled):
+You can call unregisterFromNotificationServer() method from you app to unregister your app from Curio Push notification server. After calling this method as below, your app will not receive push notifications:
+
+	...
+	CurioClient.getInstance(context).unregisterFromNotificationServer();
+	...
 
 Actually that's all you need to do in your application for a quick and simple integration. For more detail, please keep reading next sections.
 

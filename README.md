@@ -1,4 +1,4 @@
-#Curio Android SDK 1.03
+#Curio Android SDK 1.04
 
 [Curio](https://gui-curio.turkcell.com.tr) is Turkcell's mobile analytics system, and this is Curio's Android Client SDK library. Applications developed for ***Android 2.2 Froyo (API Level 8) and higher*** can easily use Curio mobile analytics with this library.
 
@@ -16,7 +16,7 @@ All configuraiton of Curio is made through XML configuration file. For this, cre
 	    <integer name="session_timeout">15</integer>
 	    <bool name="periodic_dispatch_enabled">false</bool>
 	    <string name="gcm_senderId">your GCM sender id</string>
-    	<bool name="auto_push_registration">false</bool>
+    	    <bool name="auto_push_registration">false</bool>
 	    <integer name="dispatch_period">5</integer>
 	    <integer name="max_cached_activity_count">1000</integer>
 	    <bool name="logging_enabled">false</bool>
