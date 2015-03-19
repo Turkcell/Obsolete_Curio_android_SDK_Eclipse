@@ -1,5 +1,6 @@
 package com.turkcell.curiosample;
 
+import android.annotation.SuppressLint;
 import android.app.ActionBar;
 import android.content.Intent;
 import android.graphics.Color;
@@ -13,7 +14,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
-
 import com.turkcell.curio.CurioClient;
 
 public class MainActivity extends FragmentActivity implements ActionBar.OnNavigationListener {
@@ -25,10 +25,21 @@ public class MainActivity extends FragmentActivity implements ActionBar.OnNaviga
 	 */
 	private static final String STATE_SELECTED_NAVIGATION_ITEM = "selected_navigation_item";
 
+	@SuppressLint("NewApi")
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
+		/* For programmatical setup uncomment those lines below
+		CurioClient.getInstance(this, false).setServerUrl("server_url");
+		CurioClient.getInstance(this, false).setTrackingCode("XXXXX");
+		CurioClient.getInstance(this, false).setApiKey("XXXXX");
+		CurioClient.getInstance(this, false).setGcmSenderId("XXXXX"); //optional, needed if auto push enabled
+		CurioClient.getInstance(this, false).setAutoPushRegistrationEnabled(true); //optional, needed if auto push enabled
+		CurioClient.getInstance(this, false).setSessionTimeout(4);
+		CurioClient.getInstance(this, false).setPeriodicDispatchEnabled(false);
+		CurioClient.getInstance(this, false).setLoggingEnabled(true); */
+		
 		//If your application receives push notification. Optional
 		CurioClient.getInstance(this).getPushData(getIntent());
 		

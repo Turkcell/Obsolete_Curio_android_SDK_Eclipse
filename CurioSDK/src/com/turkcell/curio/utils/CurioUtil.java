@@ -17,23 +17,23 @@ import java.util.UUID;
  */
 public class CurioUtil {
 	
-	/**
-	 * !!Legacy method from 8digits. May be removed!!
-	 * @param urlPrefix
-	 * @return
-	 */
-	public static String formatUrlPrefix(String urlPrefix) {
-		if (!urlPrefix.startsWith(Constants.HTTP) && !urlPrefix.startsWith(Constants.HTTPS))
-			urlPrefix = Constants.HTTPS + urlPrefix;
-
-		if (urlPrefix.endsWith(Constants.BACKSLASH))
-			urlPrefix = urlPrefix.substring(0, urlPrefix.length() - 1);
-
-		if (urlPrefix.endsWith(Constants.API))
-			urlPrefix = urlPrefix.substring(0, urlPrefix.length() - (Constants.API.length() + 1));
-
-		return urlPrefix;
-	}
+//	/**
+//	 * !!Legacy method from 8digits. May be removed!!
+//	 * @param urlPrefix
+//	 * @return
+//	 */
+//	public static String formatUrlPrefix(String urlPrefix) {
+//		if (!urlPrefix.startsWith(Constants.HTTP) && !urlPrefix.startsWith(Constants.HTTPS))
+//			urlPrefix = Constants.HTTPS + urlPrefix;
+//
+//		if (urlPrefix.endsWith(Constants.BACKSLASH))
+//			urlPrefix = urlPrefix.substring(0, urlPrefix.length() - 1);
+//
+//		if (urlPrefix.endsWith(Constants.API))
+//			urlPrefix = urlPrefix.substring(0, urlPrefix.length() - (Constants.API.length() + 1));
+//
+//		return urlPrefix;
+//	}
 	
 	/**
 	 * Generates a version 1 Universally Unique Identifier.

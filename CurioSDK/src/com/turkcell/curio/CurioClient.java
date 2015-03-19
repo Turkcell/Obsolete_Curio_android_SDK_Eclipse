@@ -53,12 +53,14 @@ import com.turkcell.curio.utils.VisitorCodeManager;
 @SuppressLint("FieldGetter")
 public class CurioClient implements INetworkConnectivityChangeListener {
 	private static final String TAG = "CurioClient";
+	private static boolean getParamsFromResource = true;
+	public static CurioClient instance = null;
+
 	private Context context;
 	private String urlPrefix;
 	private String sessionCode;
 	private boolean isPeriodicDispatchEnabled;
 	private int dispatchPeriod;
-	public static CurioClient instance = null;
 	private Map<String, Screen> contextHitcodeMap = new HashMap<String, Screen>();
 	private CurioRequestProcessor curioRequestProcessor;
 	private DBRequestProcessor dbRequestProcessor;
@@ -67,14 +69,21 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 	private boolean isOfflineCachingOn;
 	private Boolean initialConnectionState;
 	private StaticFeatureSet staticFeatureSet;
-	protected int unauthCount = 0;
 	private boolean offlineReqExists = true;
 	private Boolean isAdIdAvailable = null;
-	protected boolean isParamLoadingFinished = false;
-	protected boolean isSessionStartSent;
 	private String pushMessageId = null;
 	private String customId = null;
 	private boolean isTriggeredByUnregisterRequest = false;
+
+	protected int unauthCount = 0;
+	protected boolean isParamLoadingFinished = false;
+	protected boolean isSessionStartSent;
+	private String tmpTrackingCode;
+	private String tmpApiKey;
+	private String tmpGcmSenderId;
+	private boolean tmpAutoPushRegistration;
+	private int tmpSessionTimeout;
+	private boolean tmpLoggingEnabled;
 
 	/**
 	 * Be sure to call createInstance first.
@@ -120,6 +129,24 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 	}
 
 	/**
+	 * Gets and creates instance if needed.
+	 * 
+	 * @param context
+	 * @return
+	 */
+	public static synchronized CurioClient getInstance(Context context, boolean loadParamsFromResource) {
+		if (instance == null) {
+			if (!loadParamsFromResource) {
+				getParamsFromResource = loadParamsFromResource;
+			}
+
+			createInstance(context);
+		}
+
+		return instance;
+	}
+
+	/**
 	 * Starts main request processor thread.
 	 */
 	private void startMainRequestProcessorThread() {
@@ -139,6 +166,7 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 	 * Private constructor.
 	 * 
 	 * @param context
+	 * @param getParamsFromResource
 	 */
 	private CurioClient(Context context) {
 		this.setContext(context);
@@ -166,12 +194,34 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 			@Override
 			public void run() {
 				String visitorCode = null;
-				String apiKey = CurioClientSettings.getInstance(context).getApiKey();
-				int sessionTimeout = CurioClientSettings.getInstance(context).getSessionTimeout();
-				isPeriodicDispatchEnabled = CurioClientSettings.getInstance(context).isPeriodicDispatchEnabled();
-				String trackingCode = CurioClientSettings.getInstance(context).getTrackingCode();
-				String gcmSenderId = CurioClientSettings.getInstance(context).getGcmSenderId();
-				boolean autoPushRegistration = CurioClientSettings.getInstance(context).isAutoPushRegistration();
+
+				String apiKey = null;
+				String trackingCode = null;
+				int sessionTimeout = 0;
+				boolean autoPushRegistration = false;
+				String gcmSenderId = null;
+
+				if (getParamsFromResource) {
+					apiKey = CurioClientSettings.getInstance(context).getApiKey();
+					trackingCode = CurioClientSettings.getInstance(context).getTrackingCode();
+					sessionTimeout = CurioClientSettings.getInstance(context).getSessionTimeout();
+					gcmSenderId = CurioClientSettings.getInstance(context).getGcmSenderId();
+					autoPushRegistration = CurioClientSettings.getInstance(context).isAutoPushRegistration();
+					setServerUrl(CurioClientSettings.getInstance(context).getServerUrl());
+					isPeriodicDispatchEnabled = CurioClientSettings.getInstance(context).isPeriodicDispatchEnabled();
+
+					if (isPeriodicDispatchEnabled) {
+						dispatchPeriod = CurioClientSettings.getInstance(context).getDispatchPeriod();
+
+						if (dispatchPeriod >= sessionTimeout) {
+							CurioLogger.w(TAG, "Dispatch period cannot be greater or equal to session timeout.");
+							dispatchPeriod = sessionTimeout - 1;
+							CurioClientSettings.getInstance(context).setDispatchPeriod(dispatchPeriod);
+							CurioLogger.i(TAG, "Periodic dispatch is ENABLED.");
+							CurioLogger.i(TAG, "Dispatch period is " + dispatchPeriod + " minutes");
+						}
+					}
+				}
 
 				if (Build.VERSION.SDK_INT >= Constants.GINGERBREAD_2_3_3_SDK_INT) {
 					Info adInfo = null;
@@ -212,22 +262,15 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 					visitorCode = VisitorCodeManager.id(trackingCode, context);
 				}
 
-				setUrlPrefix(CurioClientSettings.getInstance(context).getServerUrl());
-
-				if (isPeriodicDispatchEnabled) {
-					dispatchPeriod = CurioClientSettings.getInstance(context).getDispatchPeriod();
-
-					if (dispatchPeriod >= sessionTimeout) {
-						CurioLogger.w(TAG, "Dispatch period cannot be greater or equal to session timeout.");
-						dispatchPeriod = sessionTimeout - 1;
-						CurioClientSettings.getInstance(context).setDispatchPeriod(dispatchPeriod);
-						CurioLogger.i(TAG, "Periodic dispatch is ENABLED.");
-						CurioLogger.i(TAG, "Dispatch period is " + dispatchPeriod + " minutes");
-					}
+				if (getParamsFromResource) {
+					staticFeatureSet = new StaticFeatureSet(apiKey, trackingCode, visitorCode, sessionTimeout, gcmSenderId, autoPushRegistration);
+				} else {
+					staticFeatureSet = new StaticFeatureSet(tmpApiKey, tmpTrackingCode, visitorCode, tmpSessionTimeout, tmpGcmSenderId, tmpAutoPushRegistration);
+					CurioClientSettings.getInstance(context).setLoggingEnabled(tmpLoggingEnabled);
+					CurioClientSettings.getInstance(context).setServerUrl(urlPrefix);
 				}
-
-				staticFeatureSet = new StaticFeatureSet(apiKey, trackingCode, visitorCode, sessionTimeout, gcmSenderId, autoPushRegistration);
 				setParamLoadingFinished(true);
+
 				CurioLogger.d(TAG, "Finished loading params and created static feature set on " + System.currentTimeMillis());
 			}
 		}).start();
@@ -704,7 +747,7 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 			CurioLogger.e(TAG, "Curio Auto Push Registration is disabled. You cannot call sendPushOpenedMsg() method.");
 			return;
 		}
-		
+
 		Map<String, Object> params = new HashMap<String, Object>();
 		params.put(Constants.HTTP_PARAM_PUSH_TOKEN, PushUtil.getStoredRegistrationId(context));
 		params.put(Constants.HTTP_PARAM_VISITOR_CODE, getStaticFeatureSet().getVisitorCode());
@@ -726,7 +769,7 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 			}
 		};
 
-		String pushServerURL = CurioUtil.formatUrlPrefix(CurioClientSettings.getInstance(context).getServerUrl()) + Constants.SERVER_URL_SUFFIX_PUSH_DATA;
+		String pushServerURL = CurioClientSettings.getInstance(context).getServerUrl() + Constants.SERVER_URL_SUFFIX_PUSH_DATA;
 
 		OnlineRequest onlineRequest = new OnlineRequest(pushServerURL, params, callback, CurioRequestProcessor.SECOND_PRIORITY);
 		CurioRequestProcessor.pushToOnlineQueue(onlineRequest);
@@ -743,7 +786,7 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 			CurioLogger.e(TAG, "Curio Auto Push Registration is disabled. You cannot call sendRegistrationId() method.");
 			return;
 		}
-		
+
 		Map<String, Object> params = new HashMap<String, Object>();
 		params.put(Constants.HTTP_PARAM_PUSH_TOKEN, registrationId);
 		params.put(Constants.HTTP_PARAM_VISITOR_CODE, getStaticFeatureSet().getVisitorCode());
@@ -773,14 +816,14 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 					}
 				} else if (statusCode == HttpStatus.SC_OK) {
 					unauthCount = 0;
-					CurioLogger.d(TAG, "Registration id has been successfull sent to push server.");
+					CurioLogger.d(TAG, "Registration id has been successfully sent to push server.");
 				} else {
 					CurioLogger.e(TAG, "Failed to send registration id. Server responded with status code: " + statusCode);
 				}
 			}
 		};
 
-		String pushServerURL = CurioUtil.formatUrlPrefix(CurioClientSettings.getInstance(context).getServerUrl()) + Constants.SERVER_URL_SUFFIX_PUSH_DATA;
+		String pushServerURL = CurioClientSettings.getInstance(context).getServerUrl() + Constants.SERVER_URL_SUFFIX_PUSH_DATA;
 
 		OnlineRequest onlineRequest = new OnlineRequest(pushServerURL, params, callback, CurioRequestProcessor.SECOND_PRIORITY);
 		CurioRequestProcessor.pushToOnlineQueue(onlineRequest);
@@ -848,7 +891,7 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 
 		if (registrationId == null) {
 			PushUtil.checkForGCMRegistration(context);
-		} else{
+		} else {
 			sendRegistrationId(context, registrationId);
 		}
 	}
@@ -904,7 +947,7 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 				}
 			};
 
-			String pushServerURL = CurioUtil.formatUrlPrefix(CurioClientSettings.getInstance(context).getServerUrl()) + Constants.SERVER_URL_SUFFIX_UNREGISTER;
+			String pushServerURL = CurioClientSettings.getInstance(context).getServerUrl() + Constants.SERVER_URL_SUFFIX_UNREGISTER;
 
 			OnlineRequest onlineRequest = new OnlineRequest(pushServerURL, params, callback, CurioRequestProcessor.SECOND_PRIORITY);
 			CurioRequestProcessor.pushToOnlineQueue(onlineRequest);
@@ -933,10 +976,6 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 		return urlPrefix;
 	}
 
-	public void setUrlPrefix(String urlPrefix) {
-		this.urlPrefix = CurioUtil.formatUrlPrefix(urlPrefix);
-	}
-
 	public Context getContext() {
 		return context;
 	}
@@ -949,16 +988,70 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 		return isPeriodicDispatchEnabled;
 	}
 
-	public void setPeriodicDispatchEnabled(boolean isPeriodicDispatchEnabled) {
-		this.isPeriodicDispatchEnabled = isPeriodicDispatchEnabled;
-	}
-
 	public int getDispatchPeriod() {
 		return dispatchPeriod;
 	}
 
+	public void setTrackingCode(String trackingCode) {
+		if (isParamLoadingFinished) {
+			getStaticFeatureSet().setTrackingCode(trackingCode);
+		} else {
+			tmpTrackingCode = trackingCode;
+		}
+	}
+
+	public void setApiKey(String apiKey) {
+		if (isParamLoadingFinished) {
+			getStaticFeatureSet().setApiKey(apiKey);
+			;
+		} else {
+			tmpApiKey = apiKey;
+		}
+	}
+
+	public void setGcmSenderId(String gcmSenderId) {
+		if (isParamLoadingFinished) {
+			getStaticFeatureSet().setGcmSenderId(gcmSenderId);
+		} else {
+			tmpGcmSenderId = gcmSenderId;
+		}
+	}
+
+	public void setAutoPushRegistrationEnabled(boolean autoPushRegistration) {
+		if (isParamLoadingFinished) {
+			getStaticFeatureSet().setAutoPushRegistrationEnabled(autoPushRegistration);
+		} else {
+			tmpAutoPushRegistration = autoPushRegistration;
+		}
+	}
+
+	public void setSessionTimeout(int sessionTimeout) {
+		if (isParamLoadingFinished) {
+			getStaticFeatureSet().setSessionTimeout(sessionTimeout);
+		} else {
+			tmpSessionTimeout = sessionTimeout;
+		}
+	}
+
+	public void setLoggingEnabled(boolean loggingEnabled) {
+		if (isParamLoadingFinished) {
+			CurioClientSettings.getInstance(context).setLoggingEnabled(loggingEnabled);
+		} else {
+			tmpLoggingEnabled = loggingEnabled;
+		}
+	}
+
 	public void setDispatchPeriod(int dispatchPeriod) {
 		this.dispatchPeriod = dispatchPeriod;
+	}
+
+	public void setPeriodicDispatchEnabled(boolean isPeriodicDispatchEnabled) {
+		this.isPeriodicDispatchEnabled = isPeriodicDispatchEnabled;
+	}
+
+	public void setServerUrl(String serverUrl) {
+		urlPrefix = serverUrl;
+		CurioClientSettings.getInstance(context).setServerUrl(serverUrl);
 	}
 
 	public StaticFeatureSet getStaticFeatureSet() {
@@ -1072,8 +1165,16 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 			return apiKey;
 		}
 
+		public void setApiKey(String apiKey) {
+			this.apiKey = apiKey;
+		}
+
 		public String getTrackingCode() {
 			return trackingCode;
+		}
+
+		public void setTrackingCode(String trackingCode) {
+			this.trackingCode = trackingCode;
 		}
 
 		public String getVisitorCode() {
@@ -1086,6 +1187,10 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 
 		public int getSessionTimeout() {
 			return sessionTimeout;
+		}
+
+		public void setSessionTimeout(int sessionTimeout) {
+			this.sessionTimeout = sessionTimeout;
 		}
 
 		public String getDeviceScreenWidth() {
@@ -1152,8 +1257,16 @@ public class CurioClient implements INetworkConnectivityChangeListener {
 			return gcmSenderId;
 		}
 
+		public void setGcmSenderId(String gcmSenderId) {
+			this.gcmSenderId = gcmSenderId;
+		}
+
 		public boolean isAutoPushRegistration() {
 			return autoPushRegistration;
+		}
+
+		public void setAutoPushRegistrationEnabled(boolean autoPushRegistration) {
+			this.autoPushRegistration = autoPushRegistration;
 		}
 
 	}

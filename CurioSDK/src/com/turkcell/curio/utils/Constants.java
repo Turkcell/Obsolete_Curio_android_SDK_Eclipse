@@ -112,7 +112,7 @@ public class Constants {
 	public static final int GINGERBREAD_2_3_3_SDK_INT = 10;
 	
 	//Important, update this value on every version update!!!
-	public static final String CURIO_SDK_VER = "1.04";
+	public static final String CURIO_SDK_VER = "1.05";
 	
 	public static final String SHARED_PREF_NAME_GCM = "gcm";
 	public static final String SHARED_PREF_KEY_GCM_REGID = "gcm_registration_id";

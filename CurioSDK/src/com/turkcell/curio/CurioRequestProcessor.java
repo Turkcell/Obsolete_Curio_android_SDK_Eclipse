@@ -38,7 +38,6 @@ import com.turkcell.curio.utils.CurioDBContract.CurioOfflineCacheEntry;
 import com.turkcell.curio.utils.CurioDBContract.CurioPeriodicDispatchEntry;
 import com.turkcell.curio.utils.CurioDBHelper;
 import com.turkcell.curio.utils.CurioLogger;
-import com.turkcell.curio.utils.CurioUtil;
 import com.turkcell.curio.utils.NetworkUtil;
 
 /**
@@ -155,7 +154,7 @@ public class CurioRequestProcessor implements Runnable {
 			/**
 			 * Send fetched requests
 			 */
-			String url = CurioUtil.formatUrlPrefix(CurioClientSettings.getInstance(context).getServerUrl()) + Constants.SERVER_URL_SUFFIX_PERIODIC_BATCH;
+			String url = CurioClientSettings.getInstance(context).getServerUrl() + Constants.SERVER_URL_SUFFIX_PERIODIC_BATCH;
 
 			CurioLogger.d(TAG, "URL : " + url);
 
@@ -247,7 +246,7 @@ public class CurioRequestProcessor implements Runnable {
 		/**
 		 * Send fetched requests
 		 */
-		String url = CurioUtil.formatUrlPrefix(CurioClientSettings.getInstance(context).getServerUrl()) + Constants.SERVER_URL_SUFFIX_OFFLINE_CACHE;
+		String url = CurioClientSettings.getInstance(context).getServerUrl() + Constants.SERVER_URL_SUFFIX_OFFLINE_CACHE;
 
 		CurioLogger.d(TAG, "URL : " + url);
 

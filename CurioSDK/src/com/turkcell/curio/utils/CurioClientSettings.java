@@ -44,9 +44,9 @@ public class CurioClientSettings {
 		serverUrl = paramLoader.getString(Constants.CONFIG_PARAM_SERVER_URL, null);
 		autoPushRegistration = paramLoader.getBoolean(Constants.CONFIG_PARAM_AUTO_PUSH_REGISTRATION, false);
 
-		if(apiKey == null || trackingCode == null || serverUrl == null){
-			throw new IllegalStateException("api_key, tracking_code and server_url are required parameters, they can NOT be null. Please be sure that you defined those parameters in curio.xml config file.");
-		}
+//		if(apiKey == null || trackingCode == null || serverUrl == null){
+//			throw new IllegalStateException("api_key, tracking_code and server_url are required parameters, they can NOT be null. Please be sure that you defined those parameters in curio.xml config file.");
+//		}
 		
 		sessionTimeout = paramLoader.getInteger(Constants.CONFIG_PARAM_SESSION_TIMEOUT, Constants.CONFIG_PARAM_DEFAULT_VALUE_SESSION_TIMEOUT_IN_MINUTES);
 		isPeriodicDispatchEnabled = paramLoader.getBoolean(Constants.CONFIG_PARAM_PERIODIC_DISPATCH, false);
@@ -155,6 +155,11 @@ public class CurioClientSettings {
 
 	public void setAutoPushRegistration(boolean autoPushRegistration) {
 		this.autoPushRegistration = autoPushRegistration;
+	}
+
+	@SuppressWarnings("static-access")
+	public void setLoggingEnabled(boolean loggingEnabled) {
+		this.loggingEnabled = loggingEnabled;
 	}
 	
 }
