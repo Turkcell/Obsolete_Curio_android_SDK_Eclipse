@@ -398,6 +398,10 @@ public class CurioDBHelper extends SQLiteOpenHelper {
 			closeDatabase();
 		}
 
+		if(array == null || array.length() == 0){
+			return null;
+		}
+		
 		return array.toString();
 	}
 
