@@ -1,6 +1,6 @@
 #IMPORTANT:
 Eclipse project structure support is dropped for Curio Android SDK. Instead, please use new Android Studio/Gradle project structure repository. Now, you can add Curio Android SDK as a gradle dependency to your Android Studio project.
-If you use Eclipse for your Android project, ***please get newest version of Curio Android SDK as jar file (curiosdk.jar) from new repository. Please note that this repo will not be updated after version 1.06.*** For details please read new repo README.
+If you use Eclipse for your Android project, ***please get the newest version of Curio Android SDK as jar file (curiosdk.jar) from the new repository. Please note that this repo will not be updated after version 1.06.*** For details please read new repo README.
 
 #Curio Android SDK 1.06
 
