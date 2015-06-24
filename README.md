@@ -1,3 +1,7 @@
+#IMPORTANT:
+Eclipse project structure support is dropped for Curio Android SDK. Instead, please use new Android Studio/Gradle project structure repository. Now, you can add Curio Android SDK as a gradle dependency to your Android Studio project.
+If you use Eclipse in your project, ***please get newest version of Curio Android SDK as jar file (curiosdk.jar) from new repository. Please note that this repo will not be updated after version 1.06.*** For details please read new repo README.
+
 #Curio Android SDK 1.06
 
 [Curio](https://gui-curio.turkcell.com.tr) is Turkcell's mobile analytics system, and this is Curio's Android Client SDK library. Applications developed for ***Android 2.2 Froyo (API Level 8) and higher*** can easily use Curio mobile analytics with this library.
